@@ -23,7 +23,7 @@
 # Initialization:
 
 . ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
-. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.jk-shellfuncs
+. $(dirname $0)/.jk-shellfuncs
 
 #######################################################################
 

@@ -165,6 +165,8 @@ nginx_monitor() {
 
 	[ $OCF_CHECK_LEVEL = 0 -o $RETVAL != 0 ] && return $RETVAL
 
+	# TODO: add some monitoring...
+
 	return $OCF_SUCCESS
 }
 

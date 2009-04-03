@@ -23,6 +23,7 @@
 # Initialization:
 
 . ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
+. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.jk-shellfuncs
 
 #######################################################################
 
@@ -164,7 +165,8 @@ nginx_start() {
 		return $OCF_SUCCESS
 	fi
 
-	jk_pidfile_prepare && ERRORS=`$NGINX 2>&1`
+	jk_pidfile_prepare
+	[ $? -eq $OCF_NOT_RUNNING ] && ERRORS=`$NGINX 2>&1`
 	RETVAL=$?
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then

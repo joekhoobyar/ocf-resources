@@ -1,0 +1,230 @@
+#!/bin/sh
+#
+# Description:	Manages an amavisd instance as an OCF High-Availability resource
+#								under Heartbeat/LinuxHA control
+#
+# Author:	Joe Khoobyar
+#
+# License:	GNU General Public License (GPL)
+#
+# Copyright (c) 2009 All Rights Reserved
+#
+# See usage() function below for more details...
+#
+# OCF instance parameters:
+#   OCF_RESKEY_amavisd
+#   OCF_RESKEY_config
+#   OCF_RESKEY_pid
+#   OCF_RESKEY_home
+#		OCF_RESKEY_user
+#		OCF_RESKEY_group
+#		OCF_RESKEY_options
+
+#######################################################################
+# Initialization:
+
+. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
+
+#######################################################################
+
+: ${OCF_RESKEY_amavisd="/usr/sbin/amavisd"}
+: ${OCF_RESKEY_config="/etc/amavisd.conf"}
+: ${OCF_RESKEY_pid="/var/run/amavis/amavisd.pid"}
+: ${OCF_RESKEY_home="/var/amavis"}
+: ${OCF_RESKEY_user="amavis"}
+: ${OCF_RESKEY_group="amavis"}
+
+usage() {
+cat <<END
+
+usage: $0 (start|stop|status|monitor|meta-data|validate-all)
+
+$0 manages Amavisd as an OCF resource.
+
+The 'start' operation starts Amavisd.
+The 'stop' operation stops Amavisd.
+The 'status' operation reports whether Amavisd is running.
+The 'monitor' operation reports whether Amavisd seems to be working.
+The 'meta-data' operation reports the configuration options.
+The 'validate-all' operation reports whether the parameters are valid.
+
+END
+}
+
+meta_data() {
+cat <<END
+
+<?xml version="1.0" ?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="amavisd">
+    <version>1.0</version>
+      <longdesc lang="en">This is an OCF resource agent for Amavisd</longdesc>
+      <shortdesc lang="en">OCF resource agent for Amavisd</shortdesc>
+      <parameters>
+				<parameter name="amavisd" required="1" unique="0">
+					<longdesc lang="en">
+						Full path to the Amavisd executable.
+					</longdesc>
+					<shortdesc>Amavisd executable</shortdesc>
+					<content type="string" default="/usr/sbin/amavisd"/>
+				</parameter>
+				<parameter name="config" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the Amavisd configuration file for this instance.
+					</longdesc>
+					<shortdesc>Config file</shortdesc>
+					<content type="string" default="/etc/amavisd.conf"/>
+				</parameter>
+				<parameter name="pid" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the PID file that this instance should use.
+					</longdesc>
+					<shortdesc>PID file</shortdesc>
+					<content type="string" default="/var/run/amavis/amavisd.pid"/>
+				</parameter>
+				<parameter name="home" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the Amavisd home directory.
+					</longdesc>
+					<shortdesc>Home directory</shortdesc>
+					<content type="string" default="/var/amavis"/>
+				</parameter>
+				<parameter name="user" required="1">
+					<longdesc lang="en">
+						Drop privileges to this user.
+					</longdesc>
+					<shortdesc>user</shortdesc>
+					<content type="string" default="amavis"/>
+				</parameter>
+				<parameter name="group" required="1">
+					<longdesc lang="en">
+						Change to this group.
+					</longdesc>
+					<shortdesc>group</shortdesc>
+					<content type="string" default="amavis"/>
+				</parameter>
+				<parameter name="options" required="0">
+					<longdesc lang="en">
+						Any additional options to pass to the Amavisd command.
+					</longdesc>
+					<shortdesc>Extra options</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+		</parameters>
+    <actions>
+      <action name="start" timeout="30" />
+      <action name="stop" timeout="30" />
+      <action name="status" timeout="20" />
+      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
+      <action name="meta-data" timeout="5" />
+      <action name="validate-all" timeout="5" />
+   </actions>
+</resource-agent>
+
+END
+}
+
+AMAVISD="$OCF_RESKEY_amavisd -u $OCF_RESKEY_user -g $OCF_RESKEY_group -c $OCF_RESKEY_config -P $OCF_RESKEY_pid"
+[ -z "$OCF_RESKEY_home" ] || AMAVSID="$AMAVISD -H $OCF_RESKEY_home"
+[ -z "$OCF_RESKEY_options" ] || AMAVSID="$AMAVISD $OCF_RESKEY_options"
+
+amavisd_validate() {
+	if [ ! -x $OCF_RESKEY_amavisd ]; then
+		ocf_log err "$OCF_RESKEY_amavisd is not installed"
+		exit $OCF_ERR_INSTALLED
+	fi
+	if [ ! -r $OCF_RESKEY_config ]; then
+		ocf_log err "$OCF_RESKEY_config is either missing or unreadable"
+		exit $OCF_ERR_CONFIGURED
+	fi
+
+	return $OCF_SUCCESS
+}
+
+amavisd_status() {
+  if [ ! -e $OCF_RESKEY_pid ]; then
+		ocf_log debug "Amavisd is not running"
+		return $OCF_NOT_RUNNING
+	fi
+
+	pid=`cat $OCF_RESKEY_pid`
+	if [ -d /proc -a -d /proc/1 ]; then
+		[ "u$pid" != "u" -a -d /proc/$pid ]
+	else
+		kill -0 $pid >/dev/null 2>&1
+	fi
+
+	if [ $? -eq 0 ]; then
+		return $OCF_SUCCESS
+	else
+		ocf_log debug "Amavisd not running: removing old PID file"
+		rm -f $OCF_RESKEY_pid
+		return $OCF_NOT_RUNNING
+	fi
+}
+
+amavisd_monitor() {
+	amavisd_status; RETVAL=$?
+
+	[ $OCF_CHECK_LEVEL = 0 -o $RETVAL != 0 ] && return $RETVAL
+
+	# TODO: add some monitoring...
+
+	return $OCF_SUCCESS
+}
+
+amavisd_start() {
+	if amavisd_status; then
+		ocf_log debug "Amavisd is already running"
+		return $OCF_SUCCESS
+	fi
+
+	(ulimit -S -c 0 ; $AMAVISD start); RETVAL=$?
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "Amavisd failed to start: $RETVAL"
+		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
+		return $RETVAL
+	fi
+
+	return $OCF_SUCCESS
+}
+
+amavisd_reload() {
+	amavisd_status; RETVAL=$?
+	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $RETVAL
+	if [ $RETVAL -eq 0 ]; then
+		kill -HUP $pid; RETVAL=$?
+		[ $RETVAL -eq 0 ] || RETVAL=$OCF_ERR_GENERIC
+	fi
+	return $RETVAL
+}
+
+amavisd_stop() {
+	amavisd_status; RETVAL=$?
+
+	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
+	if [ $RETVAL -eq 0 ]; then
+		kill $pid; RETVAL=$?
+	fi
+	if [ $RETVAL -ne 0 ]; then
+		ocf_log err "Amavisd failed to stop: $RETVAL"
+		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
+		return $RETVAL
+	fi
+
+	return $OCF_SUCCESS
+}
+
+# What kind of method was invoked?
+case "$1" in
+  start)	amavisd_validate; amavisd_start;;
+  stop)		amavisd_stop;;
+  status)	amavisd_status;;
+  reload)	amavisd_reload;;
+  monitor)	amavisd_monitor;;
+  meta-data)	meta_data; exit $OCF_SUCCESS;;
+  validate-all)	amavisd_validate; exit $OCF_SUCCESS;;
+  *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
+esac
+exit $?

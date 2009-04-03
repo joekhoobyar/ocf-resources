@@ -93,7 +93,7 @@ cat <<END
 						Any additional options to pass to the NGINX command.
 					</longdesc>
 					<shortdesc>Extra options</shortdesc>
-					<content type="string" default="nobody"/>
+					<content type="string" default=""/>
 				</parameter>
 				<parameter name="renice" required="0">
 					<longdesc lang="en">

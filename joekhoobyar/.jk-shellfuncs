@@ -125,10 +125,10 @@ jk_resource_signal_by_pid() {
 		kill $signal $pid; retval=$?
 		if [ $retval -ne 0 ]; then
 			case "$signal" in
-			|TERM)
+			""|-TERM)
 				ocf_log err "$name failed to stop."
 				;;
-			HUP)
+			-HUP)
 				ocf_log err "$name could not be reloaded."
 				;;
 			esac

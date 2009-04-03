@@ -18,6 +18,8 @@
 #   OCF_RESKEY_pid_owner
 #   OCF_RESKEY_pid_group
 #		OCF_RESKEY_options
+#   OCF_RESKEY_renice
+#		OCF_RESKEY_monitor_url
 
 #######################################################################
 # Initialization:
@@ -110,6 +112,14 @@ cat <<END
 					<shortdesc>renice value</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
+				<parameter name="monitor_url" required="0">
+					<longdesc lang="en">
+						Optional URL to use for monitoring NGINX with wget when the
+						OCF_CHECK_LEVEL is 10 or above.
+					</longdesc>
+					<shortdesc>URL to monitor</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
 		</parameters>
     <actions>
       <action name="start" timeout="30" />
@@ -136,11 +146,17 @@ nginx_status() {
 }
 
 nginx_monitor() {
-	nginx_status; RETVAL=$?
+	local url retval
+	nginx_status; retval=$?
 
-	[ $OCF_CHECK_LEVEL = 0 -o $RETVAL != 0 ] && return $RETVAL
+	[ $OCF_CHECK_LEVEL -lt 10 -o $retval -ne 0 ] && return $retval
 
-	# TODO: add some monitoring...
+	# Monitor an URL, if configured to do so.
+	url="$OCF_RESKEY_monitor_url"
+	if ! [ -z "$url" ] && ! $WGET --spider -q -T 45 "$url"; then
+		ocf_log err "Monitoring of $url failed"
+		return $OCF_ERR_GENERIC
+	fi
 
 	return $OCF_SUCCESS
 }

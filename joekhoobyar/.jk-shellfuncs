@@ -1,0 +1,51 @@
+jk_pidfile_prepare() {
+	local ownership=$1
+	[ -z "$ownership" ] && ownership=$OCF_RESKEY_owner
+	[ -z "$ownership" ] || ownership="$ownership:$OCF_RESKEY_group"
+	local pidfile=$2
+	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+
+	if [ -z "$pidfile" ] || ! touch $pidfile; then
+		return $?
+	fi
+	if [ -z "$ownership" ] || ! chown $ownership $pidfile; then
+		return $?
+	fi
+	chmod 640 $pidfile
+}
+
+jk_pidfile_status() {
+	local pidfile=$1
+
+	# Missing...
+	[ -e $pidfile ] || return 2
+	pid=`cat $pidfile`
+
+	# Valid or purgable...
+	if [ "u$pid" != "u" ] && ocf_is_decimal $pid; then
+		[ -d /proc/$pid ] && return 0
+		[ -d /proc/1 ] && return 1
+		kill -0 $pid 2>&1 > /dev/null && return 0
+	fi
+
+	# Purgable...
+	return 1
+}
+
+jk_resource_status_by_pid() {
+	local pidfile=$2
+	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+
+	jk_pidfile_status $pidfile; RETVAL=$?
+
+	if [ $RETVAL -eq 0 ]; then
+		return $OCF_SUCCESS
+	elif [ $RETVAL -eq 1 ]; then
+		ocf_log debug "$1 not running: removing PID file"
+		rm -f $pidfile
+	else
+		ocf_log debug "$1 is not running"
+	fi
+
+	return $OCF_NOT_RUNNING
+}

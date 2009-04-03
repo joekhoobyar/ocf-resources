@@ -145,25 +145,7 @@ nginx_validate() {
 }
 
 nginx_status() {
-  if [ ! -e $OCF_RESKEY_pid ]; then
-		ocf_log debug "NGINX is not running"
-		return $OCF_NOT_RUNNING
-	fi
-
-	pid=`cat $OCF_RESKEY_pid`
-	if [ -d /proc -a -d /proc/1 ]; then
-		[ "u$pid" != "u" -a -d /proc/$pid ]
-	else
-		kill -0 $pid >/dev/null 2>&1
-	fi
-
-	if [ $? -eq 0 ]; then
-		return $OCF_SUCCESS
-	else
-		ocf_log debug "NGINX not running: removing old PID file"
-		rm -f $OCF_RESKEY_pid
-		return $OCF_NOT_RUNNING
-	fi
+	jk_resource_status_by_pid 'NGINX'
 }
 
 nginx_monitor() {
@@ -176,25 +158,17 @@ nginx_monitor() {
 	return $OCF_SUCCESS
 }
 
-nginx_prepstart() {
-	touch $OCF_RESKEY_pid &&
-		chown $OCF_RESKEY_owner:$OCF_RESKEY_group $OCF_RESKEY_pid &&
-		chmod 640 $OCF_RESKEY_pid
-}
-
 nginx_start() {
 	if nginx_status; then
 		ocf_log debug "NGINX is already running"
 		return $OCF_SUCCESS
 	fi
 
-	if nginx_prepstart; then
-		ERRORS=`$NGINX 2>&1`
-	fi
+	jk_pidfile_prepare && ERRORS=`$NGINX 2>&1`
 	RETVAL=$?
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		[ -z "$ERRORS" ] && ERRORS="$OCF_RESKEY_nginx exited with code $RETVAL"
+		[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
 		ocf_log err "NGINX failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else

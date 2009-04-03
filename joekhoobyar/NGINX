@@ -177,9 +177,9 @@ nginx_monitor() {
 }
 
 nginx_prepstart() {
-	touch $OCF_RESKEY_pidfile &&
-		chown $OCF_RESKEY_owner:$OCF_RESKEY_group $OCF_RESKEY_pidfile &&
-		chmod 640 $OCF_RESKEY_pidfile
+	touch $OCF_RESKEY_pid &&
+		chown $OCF_RESKEY_owner:$OCF_RESKEY_group $OCF_RESKEY_pid &&
+		chmod 640 $OCF_RESKEY_pid
 }
 
 nginx_start() {

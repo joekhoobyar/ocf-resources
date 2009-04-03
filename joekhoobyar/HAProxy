@@ -26,6 +26,7 @@
 # Initialization:
 
 . /usr/lib/ocf/resource.d/heartbeat/.ocf-shellfuncs
+. $(dirname $0)/.jk-shellfuncs
 
 #######################################################################
 
@@ -35,8 +36,8 @@
 : ${OCF_RESKEY_pid="/var/run/haproxy.pid"}
 : ${OCF_RESKEY_pid_owner="nobody"}
 : ${OCF_RESKEY_pid_group="nobody"}
-: ${OCF_RESKEY_verify_start=0}
-: ${OCF_RESKEY_verify_stop=0}
+: ${OCF_RESKEY_verify_start=1}
+: ${OCF_RESKEY_verify_stop=1}
 
 usage() {
 cat <<END

@@ -167,12 +167,11 @@ nginx_start() {
 		return $OCF_SUCCESS
 	fi
 
-	jk_pidfile_prepare
-	[ $? -eq $OCF_NOT_RUNNING ] && ERRORS=`$NGINX 2>&1`
+	jk_pidfile_prepare && ERRORS=`$NGINX 2>&1`
 	RETVAL=$?
+	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
 		ocf_log err "NGINX failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else

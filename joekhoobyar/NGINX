@@ -126,23 +126,8 @@ END
 NGINX="$OCF_RESKEY_nginx -c $OCF_RESKEY_config $OCF_RESKEY_options"
 
 nginx_validate() {
-	if [ ! -x $OCF_RESKEY_nginx ]; then
-		ocf_log err "$OCF_RESKEY_nginx is not installed"
-		exit $OCF_ERR_INSTALLED
-	fi
-	if [ ! -r $OCF_RESKEY_config ]; then
-		ocf_log err "$OCF_RESKEY_config is either missing or unreadable"
-		exit $OCF_ERR_CONFIGURED
-	fi
-
-	ERRORS=`$NGINX -t 2>&1`; RETVAL=$?
-
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "$ERRORS";
-		exit $OCF_ERR_CONFIGURED
-	fi
-
-	return $OCF_SUCCESS
+	jk_validate_executable "$OCF_RESKEY_nginx"
+	jk_validate_config "$NGINX -t" "$OCF_RESKEY_config"
 }
 
 nginx_status() {
@@ -180,13 +165,7 @@ nginx_start() {
 }
 
 nginx_reload() {
-	nginx_status; RETVAL=$?
-	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $RETVAL
-	if [ $RETVAL -eq 0 ]; then
-		kill -HUP $pid; RETVAL=$?
-		[ $RETVAL -eq 0 ] || RETVAL=$OCF_ERR_GENERIC
-	fi
-	return $RETVAL
+	jk_resource_reload_by_pid 'NGINX'
 }
 
 nginx_stop() {

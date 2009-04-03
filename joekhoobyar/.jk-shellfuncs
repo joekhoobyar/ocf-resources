@@ -1,3 +1,40 @@
+jk_validate_executable() {
+	while [ $# -gt 0 ]; do
+		if [ ! -r $1 ]; then
+			ocf_log err "$1 is either missing or not executable"
+			exit $OCF_ERR_INSTALLED
+		fi
+		shift
+	done
+	return 0
+}
+
+jk_validate_readable() {
+	while [ $# -gt 0 ]; do
+		if [ ! -r $1 ]; then
+			ocf_log err "$1 is either missing or unreadable"
+			exit $OCF_ERR_CONFIGURED
+		fi
+		shift
+	done
+	return 0
+}
+
+jk_validate_config() {
+	local command=$1
+	local config=$2
+	[ -z "$config" ] && config="$OCF_RESKEY_config"
+	[ -z "$config" ] || jk_validate_readable "$config"
+
+	ERRORS=`$command 2>&1`; retval=$?
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		ocf_log err "Invalid config file: $ERRORS";
+		exit $OCF_ERR_CONFIGURED
+	fi
+	return 0
+}
+
+
 jk_pidfile_prepare() {
 	local ownership=$1
 	[ -z "$ownership" ] && ownership=$OCF_RESKEY_pid_owner
@@ -46,4 +83,46 @@ jk_resource_status_by_pid() {
 	fi
 
 	return $OCF_NOT_RUNNING
+}
+
+jk_verify_start_by_pid() {
+	local retval pidfile=$2
+	local waiting=$OCF_RESKEY_verify_start
+	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+
+	while [ $waiting = 1 ]; do
+		jk_pidfile_status $pidfile && return $OCF_SUCCESS
+
+		if [ $retval = 2 -o -z "$pid" ]; then
+			ocf_log err "$1 failed to start: $retval"
+			return $OCF_NOT_RUNNING
+		fi
+
+		sleep 2
+	done
+	return $OCF_NOT_RUNNING
+}
+
+jk_verify_stop_by_pid() {
+	local retval pidfile=$2
+	local waiting=$OCF_RESKEY_verify_stop
+	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+
+	while [ $waiting = 1 ]; do
+		jk_pidfile_status $pidfile || return $OCF_SUCCESS
+		sleep 2
+	done
+	return $OCF_NOT_RUNNING
+}
+
+jk_resource_reload_by_pid() {
+	local retval
+	jk_resource_status_by_pid "$@"; retval=$?
+
+	[ $retval -eq $OCF_NOT_RUNNING ] && return $retval
+	if [ $retval -eq 0 ]; then
+		kill -HUP $pid; retval=$?
+		[ $retval -eq 0 ] || retval=$OCF_ERR_GENERIC
+	fi
+	return $retval
 }

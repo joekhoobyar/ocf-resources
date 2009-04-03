@@ -147,45 +147,12 @@ END
 HAPROXY="$OCF_RESKEY_haproxy -f $OCF_RESKEY_config $OCF_RESKEY_options"
 
 haproxy_validate() {
-	if [ ! -x $OCF_RESKEY_haproxy ]; then
-		ocf_log err "$OCF_RESKEY_haproxy is not installed"
-		exit $OCF_ERR_INSTALLED
-	fi
-	if [ ! -r $OCF_RESKEY_config ]; then
-		ocf_log err "$OCF_RESKEY_config is either missing or unreadable"
-		exit $OCF_ERR_CONFIGURED
-	fi
-
-	$HAPROXY -c; RETVAL=$?
-
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "The configuration file $OCF_RESKEY_config is invalid";
-		exit $OCF_ERR_CONFIGURED
-	fi
-
-	return $OCF_SUCCESS
+	jk_validate_executable $OCF_RESKEY_haproxy
+	jk_validate_config "$HAPROXY -c" "$OCF_RESKEY_config"
 }
 
 haproxy_status() {
-  if [ ! -e $OCF_RESKEY_pid ]; then
-		ocf_log debug "HAProxy is not running"
-		return $OCF_NOT_RUNNING
-	fi
-
-	pid=`cat $OCF_RESKEY_pid`
-	if [ -d /proc -a -d /proc/1 ]; then
-		[ "u$pid" != "u" -a -d /proc/$pid ]
-	else
-		kill -0 $pid >/dev/null 2>&1
-	fi
-
-	if [ $? -eq 0 ]; then
-		return $OCF_SUCCESS
-	else
-		ocf_log debug "HAProxy not running: removing old PID file"
-		rm -f $OCF_RESKEY_pid
-		return $OCF_NOT_RUNNING
-	fi
+	jk_resource_status_by_pid 'HAProxy'
 }
 
 haproxy_monitor() {
@@ -198,60 +165,30 @@ haproxy_monitor() {
 	return $OCF_SUCCESS
 }
 
-haproxy_prepstart() {
-	touch $OCF_RESKEY_pidfile &&
-		chown $OCF_RESKEY_owner:$OCF_RESKEY_group $OCF_RESKEY_pidfile &&
-		chmod 640 $OCF_RESKEY_pidfile
-}
-
 haproxy_start() {
-	local waiting=$OCF_RESKEY_verify_start
-
 	if haproxy_status; then
 		ocf_log debug "HAProxy is already running"
 		return $OCF_SUCCESS
 	fi
 
-	haproxy_prepstart && $HAPROXY -p $OCF_RESKEY_pid -D > /dev/null 2>&1
+	jk_pidfile_prepare && $HAPROXY -p $OCF_RESKEY_pid -D >/dev/null 2>&1
 	RETVAL=$?
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "HAProxy failed to start: $RETVAL"
-		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
-		return $RETVAL
+		ocf_log err "HAProxy failed to start: error code $RETVAL"
+		return $OCF_ERR_GENERIC
 	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pidfile || true
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
 	fi
 
-	while [ $waiting = 1 ]; do
-		haproxy_status; RETVAL=$?
-
-		[ $RETVAL = $OCF_SUCCESS ] && return $OCF_SUCCESS
-
-		if [ $REVAL != $OCF_NOT_RUNNING ]; then
-			ocf_log err "HAProxy failed to start: $RETVAL"
-			return $RETVAL
-		fi
-
-		sleep 2
-	done
-
-	return $OCF_SUCCESS
+	jk_verify_start_by_pid 'HAProxy'
 }
 
 haproxy_reload() {
-	haproxy_status; RETVAL=$?
-	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $RETVAL
-	if [ $RETVAL -eq 0 ]; then
-		kill -HUP $pid; RETVAL=$?
-		[ $RETVAL -eq 0 ] || RETVAL=$OCF_ERR_GENERIC
-	fi
-	return $RETVAL
+	jk_resource_reload_by_pid 'HAProxy'
 }
 
 haproxy_stop() {
-	local waiting=$OCF_RESKEY_verify_stop
-
 	haproxy_status; RETVAL=$?
 
 	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
@@ -264,15 +201,7 @@ haproxy_stop() {
 		return $RETVAL
 	fi
 
-	while [ $waiting = 1 ]; do
-		haproxy_status; RETVAL=$?
-
-		[ $RETVAL = $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
-
-		sleep 2
-	done
-
-	return $OCF_SUCCESS
+	jk_verify_stop_by_pid 'HAProxy'
 }
 
 # What kind of method was invoked?

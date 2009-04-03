@@ -134,10 +134,10 @@ nginx_validate() {
 		exit $OCF_ERR_CONFIGURED
 	fi
 
-	$NGINX -t; RETVAL=$?
+	ERRORS=`$NGINX -t 2>&1`; RETVAL=$?
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "The configuration file $OCF_RESKEY_config is invalid";
+		ocf_log err "$ERRORS";
 		exit $OCF_ERR_CONFIGURED
 	fi
 
@@ -188,13 +188,15 @@ nginx_start() {
 		return $OCF_SUCCESS
 	fi
 
-	nginx_prepstart && $NGINX
+	if nginx_prepstart; then
+		ERRORS=`$NGINX -t 2>&1`
+	fi
 	RETVAL=$?
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "NGINX failed to start: $RETVAL"
-		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
-		return $RETVAL
+		[ -z "$ERRORS" ] && ERRORS="$OCF_RESKEY_nginx exited with code $RETVAL"
+		ocf_log err "NGINX failed to start: $ERRORS"
+		return $OCF_ERR_GENERIC
 	else
 		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pidfile || true
 	fi
@@ -220,7 +222,7 @@ nginx_stop() {
 		kill $pid; RETVAL=$?
 	fi
 	if [ $RETVAL -ne 0 ]; then
-		ocf_log err "NGINX failed to stop: $RETVAL"
+		ocf_log err "NGINX failed to stop."
 		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
 		return $RETVAL
 	fi

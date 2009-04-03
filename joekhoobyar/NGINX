@@ -189,7 +189,7 @@ nginx_start() {
 	fi
 
 	if nginx_prepstart; then
-		ERRORS=`$NGINX -t 2>&1`
+		ERRORS=`$NGINX 2>&1`
 	fi
 	RETVAL=$?
 

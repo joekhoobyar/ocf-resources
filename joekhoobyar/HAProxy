@@ -41,13 +41,14 @@
 usage() {
 cat <<END
 
-usage: $0 (start|stop|status|monitor|meta-data|validate-all)
+usage: $0 (start|stop|status|reload|monitor|meta-data|validate-all)
 
 $0 manages HAProxy as an HA resource.
 
 The 'start' operation starts HAProxy.
 The 'stop' operation stops HAProxy.
 The 'status' operation reports whether HAProxy is running.
+The 'reload' operation gracefully reloads HAProxy.
 The 'monitor' operation reports whether HAProxy seems to be working.
 The 'meta-data' operation reports the configuration options.
 The 'validate-all' operation reports whether the parameters are valid.

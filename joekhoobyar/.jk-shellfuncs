@@ -115,14 +115,35 @@ jk_verify_stop_by_pid() {
 	return $OCF_NOT_RUNNING
 }
 
-jk_resource_reload_by_pid() {
-	local retval
-	jk_resource_status_by_pid "$@"; retval=$?
+jk_resource_signal_by_pid() {
+	local retval name="$1" signal="$2"
+	shift 2
+	jk_resource_status_by_pid "$name" "$@"; retval=$?
 
-	[ $retval -eq $OCF_NOT_RUNNING ] && return $retval
 	if [ $retval -eq 0 ]; then
-		kill -HUP $pid; retval=$?
-		[ $retval -eq 0 ] || retval=$OCF_ERR_GENERIC
+		[ -z "$signal" ] || signal="-$signal"
+		kill $signal $pid; retval=$?
+		if [ $retval -ne 0 ]; then
+			case "$signal"
+			|TERM)
+				ocf_log err "$name failed to stop."
+				;;
+			HUP)
+				ocf_log err "$name could not be reloaded."
+				;;
+			esac
+			return $OCF_ERR_GENERIC
+		fi
 	fi
+
+	return $retval
+}
+
+jk_resource_stop_by_pid() {
+	local retval name="$1"
+	shift
+	jk_resource_signal_by_pid "$name" "" "$@"; retval=$?
+
+	[ $retval -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
 	return $retval
 }

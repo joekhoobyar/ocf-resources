@@ -186,22 +186,11 @@ haproxy_start() {
 }
 
 haproxy_reload() {
-	jk_resource_reload_by_pid 'HAProxy'
+	jk_resource_signal_by_pid 'HAProxy', 'HUP'
 }
 
 haproxy_stop() {
-	haproxy_status; RETVAL=$?
-
-	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
-	if [ $RETVAL -eq 0 ]; then
-		kill $pid; RETVAL=$?
-	fi
-	if [ $RETVAL -ne 0 ]; then
-		ocf_log err "HAProxy failed to stop: $RETVAL"
-		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
-		return $RETVAL
-	fi
-
+	jk_resource_stop_by_pid 'HAProxy'
 	jk_verify_stop_by_pid 'HAProxy'
 }
 

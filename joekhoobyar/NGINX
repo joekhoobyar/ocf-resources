@@ -166,25 +166,11 @@ nginx_start() {
 }
 
 nginx_reload() {
-	jk_resource_reload_by_pid 'NGINX'
+	jk_resource_signal_by_pid 'NGINX', 'HUP'
 }
 
 nginx_stop() {
-	nginx_status; RETVAL=$?
-
-	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
-	if [ $RETVAL -eq 0 ]; then
-		kill $pid; RETVAL=$?
-	fi
-	if [ $RETVAL -ne 0 ]; then
-		ocf_log err "NGINX failed to stop."
-		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
-		return $RETVAL
-	fi
-
-	rm -f $OCF_RESKEY_pid
-
-	return $OCF_SUCCESS
+	jk_resource_stop_by_pid 'NGINX'
 }
 
 # What kind of method was invoked?

@@ -204,6 +204,8 @@ nginx_stop() {
 		return $RETVAL
 	fi
 
+	rm -f $OCF_RESKEY_pid
+
 	return $OCF_SUCCESS
 }
 

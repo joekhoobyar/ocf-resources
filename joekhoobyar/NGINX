@@ -26,6 +26,12 @@
 
 #######################################################################
 
+: ${OCF_RESKEY_nginx="/usr/sbin/nginx"}
+: ${OCF_RESKEY_config="/etc/nginx/nginx.conf"}
+: ${OCF_RESKEY_pid="/var/run/nginx.pid"}
+: ${OCF_RESKEY_pid_owner="nobody"}
+: ${OCF_RESKEY_pid_group="nobody"}
+
 usage() {
 cat <<END
 

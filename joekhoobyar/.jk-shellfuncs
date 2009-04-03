@@ -124,7 +124,7 @@ jk_resource_signal_by_pid() {
 		[ -z "$signal" ] || signal="-$signal"
 		kill $signal $pid; retval=$?
 		if [ $retval -ne 0 ]; then
-			case "$signal"
+			case "$signal" in
 			|TERM)
 				ocf_log err "$name failed to stop."
 				;;

@@ -197,7 +197,7 @@ nginx_start() {
 }
 
 nginx_reload() {
-	nginx_status; RETVAL=?
+	nginx_status; RETVAL=$?
 	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $RETVAL
 	if [ $RETVAL -eq 0 ]; then
 		kill -HUP $pid; RETVAL=$?

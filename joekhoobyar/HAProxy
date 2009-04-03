@@ -1,0 +1,289 @@
+#!/bin/sh
+#
+# Description:	Manages a HAProxy instance as an OCF High-Availability resource
+#								under Heartbeat/LinuxHA control
+#
+#
+# Author:	Joe Khoobyar
+#
+# License:	GNU General Public License (GPL)
+# Copyright:	(C) 2009 All Rights Reserved
+#
+# See usage() function below for more details...
+#
+# OCF instance parameters:
+#   OCF_RESKEY_haproxy
+#   OCF_RESKEY_config
+#   OCF_RESKEY_pid
+#   OCF_RESKEY_pid_owner
+#   OCF_RESKEY_pid_group
+#   OCF_RESKEY_options
+#   OCF_RESKEY_renice
+#   OCF_RESKEY_verify_start
+#   OCF_RESKEY_verify_stop
+
+#######################################################################
+# Initialization:
+
+. /usr/lib/ocf/resource.d/heartbeat/.ocf-shellfuncs
+
+#######################################################################
+
+# Fill in some defaults if no values are specified
+: ${OCF_RESKEY_haproxy="/usr/sbin/haproxy"}
+: ${OCF_RESKEY_config="/etc/haproxy/haproxy.conf"}
+: ${OCF_RESKEY_pid="/var/run/haproxy.pid"}
+: ${OCF_RESKEY_pid_owner="nobody"}
+: ${OCF_RESKEY_pid_group="nobody"}
+: ${OCF_RESKEY_verify_start=0}
+: ${OCF_RESKEY_verify_stop=0}
+
+usage() {
+cat <<END
+
+usage: $0 (start|stop|status|monitor|meta-data|validate-all)
+
+$0 manages HAProxy as an HA resource.
+
+The 'start' operation starts HAProxy.
+The 'stop' operation stops HAProxy.
+The 'status' operation reports whether HAProxy is running.
+The 'monitor' operation reports whether HAProxy seems to be working.
+The 'meta-data' operation reports the configuration options.
+The 'validate-all' operation reports whether the parameters are valid.
+
+END
+}
+
+meta_data() {
+cat <<END
+
+<?xml version="1.0" ?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="HAProxy">
+    <version>1.0</version>
+      <longdesc lang="en">This is an OCF resource agent for the HAProxy reverse proxy</longdesc>
+      <shortdesc lang="en">OCF resource agent for HAProxy</shortdesc>
+      <parameters>
+        <parameter name="haproxy" required="1" unique="0">
+          <longdesc lang="en">
+						Full path to the HAProxy executable.
+					</longdesc>
+          <shortdesc>HAProxy executable</shortdesc>
+          <content type="string" default="/usr/sbin/haproxy" />
+        </parameter>
+        <parameter name="config" required="1" unique="1">
+          <longdesc lang="en">
+						Full path to the HAProxy configuration file for this instance.
+					</longdesc>
+          <shortdesc>Config file</shortdesc>
+          <content type="string" default="/etc/haproxy/haproxy.conf" />
+        </parameter>
+				<parameter name="pid" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the PID file that this instance should use.
+					</longdesc>
+					<shortdesc>PID file</shortdesc>
+          <content type="string" default="/var/run/haproxy.pid" />
+        </parameter>
+				<parameter name="pid_owner" required="1">
+					<longdesc lang="en">
+						User who should own the PID file.
+					</longdesc>
+					<shortdesc>PID file owner</shortdesc>
+					<content type="string" default="nobody"/>
+				</parameter>
+				<parameter name="pid_group" required="1">
+					<longdesc lang="en">
+						Group which should own the PID file.
+					</longdesc>
+					<shortdesc>PID file group</shortdesc>
+					<content type="string" default="nobody"/>
+				</parameter>
+				<parameter name="options" required="0">
+					<longdesc lang="en">
+						Any additional options to pass to the HAProxy command.
+					</longdesc>
+					<shortdesc>Extra options</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="renice" required="0">
+					<longdesc lang="en">
+						Optional value to pass to renice HAProxy with after starting it.
+					</longdesc>
+					<shortdesc>renice value</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="verify_start" required="0">
+					<longdesc lang="en">
+						Set this to force this resource agent to wait until it has verified
+						that the HAProxy instance has actually started up.
+					</longdesc>
+					<shortdesc>verify start</shortdesc>
+					<content type="boolean" default="0"/>
+				</parameter>
+				<parameter name="verify_stop" required="0">
+					<longdesc lang="en">
+						Set this to force this resource agent to wait until it has verified
+						that the HAProxy instance has actually stopped running.
+					</longdesc>
+					<shortdesc>verify stop</shortdesc>
+					<content type="boolean" default="0"/>
+				</parameter>
+    </parameters>
+    <actions>
+      <action name="start" timeout="30" />
+      <action name="stop" timeout="30" />
+      <action name="status" timeout="20" />
+      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
+      <action name="meta-data" timeout="5" />
+      <action name="validate-all" timeout="5" />
+   </actions>
+</resource-agent>
+
+END
+}
+
+HAPROXY="$OCF_RESKEY_haproxy -f $OCF_RESKEY_config $OCF_RESKEY_options"
+
+haproxy_validate() {
+	if [ ! -x $OCF_RESKEY_haproxy ]; then
+		ocf_log err "$OCF_RESKEY_haproxy is not installed"
+		exit $OCF_ERR_INSTALLED
+	fi
+	if [ ! -r $OCF_RESKEY_config ]; then
+		ocf_log err "$OCF_RESKEY_config is either missing or unreadable"
+		exit $OCF_ERR_CONFIGURED
+	fi
+
+	$HAPROXY -c; RETVAL=$?
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "The configuration file $OCF_RESKEY_config is invalid";
+		exit $OCF_ERR_CONFIGURED
+	fi
+
+	return $OCF_SUCCESS
+}
+
+haproxy_status() {
+  if [ ! -e $OCF_RESKEY_pid ]; then
+		ocf_log debug "HAProxy is not running"
+		return $OCF_NOT_RUNNING
+	fi
+
+	pid=`cat $OCF_RESKEY_pid`
+	if [ -d /proc -a -d /proc/1 ]; then
+		[ "u$pid" != "u" -a -d /proc/$pid ]
+	else
+		kill -0 $pid >/dev/null 2>&1
+	fi
+
+	if [ $? -eq 0 ]; then
+		return $OCF_SUCCESS
+	else
+		ocf_log debug "HAProxy not running: removing old PID file"
+		rm -f $OCF_RESKEY_pid
+		return $OCF_NOT_RUNNING
+	fi
+}
+
+haproxy_monitor() {
+	haproxy_status; RETVAL=$?
+
+	[ $OCF_CHECK_LEVEL = 0 -o $RETVAL != 0 ] && return $RETVAL
+
+	# TODO: add some monitoring...
+
+	return $OCF_SUCCESS
+}
+
+haproxy_prepstart() {
+	touch $OCF_RESKEY_pidfile &&
+		chown $OCF_RESKEY_owner:$OCF_RESKEY_group $OCF_RESKEY_pidfile &&
+		chmod 640 $OCF_RESKEY_pidfile
+}
+
+haproxy_start() {
+	local waiting=$OCF_RESKEY_verify_start
+
+	if haproxy_status; then
+		ocf_log debug "HAProxy is already running"
+		return $OCF_SUCCESS
+	fi
+
+	haproxy_prepstart && $HAPROXY -p $OCF_RESKEY_pid -D > /dev/null 2>&1
+	RETVAL=$?
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "HAProxy failed to start: $RETVAL"
+		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
+		return $RETVAL
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pidfile || true
+	fi
+
+	while [ $waiting = 1 ]; do
+		haproxy_status; RETVAL=$?
+
+		[ $RETVAL = $OCF_SUCCESS ] && return $OCF_SUCCESS
+
+		if [ $REVAL != $OCF_NOT_RUNNING ]; then
+			ocf_log err "HAProxy failed to start: $RETVAL"
+			return $RETVAL
+		fi
+
+		sleep 2
+	done
+
+	return $OCF_SUCCESS
+}
+
+haproxy_reload() {
+	haproxy_status; RETVAL=$?
+	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $RETVAL
+	if [ $RETVAL -eq 0 ]; then
+		kill -HUP $pid; RETVAL=$?
+		[ $RETVAL -eq 0 ] || RETVAL=$OCF_ERR_GENERIC
+	fi
+	return $RETVAL
+}
+
+haproxy_stop() {
+	local waiting=$OCF_RESKEY_verify_stop
+
+	haproxy_status; RETVAL=$?
+
+	[ $RETVAL -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
+	if [ $RETVAL -eq 0 ]; then
+		kill $pid; RETVAL=$?
+	fi
+	if [ $RETVAL -ne 0 ]; then
+		ocf_log err "HAProxy failed to stop: $RETVAL"
+		[ $RETVAL -eq $OCF_NOT_RUNNING ] && RETVAL=$OCF_ERR_GENERIC
+		return $RETVAL
+	fi
+
+	while [ $waiting = 1 ]; do
+		haproxy_status; RETVAL=$?
+
+		[ $RETVAL = $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
+
+		sleep 2
+	done
+
+	return $OCF_SUCCESS
+}
+
+# What kind of method was invoked?
+case "$1" in
+  start)	haproxy_validate; haproxy_start;;
+  stop)		haproxy_stop;;
+  status)	haproxy_status;;
+  reload)	haproxy_reload;;
+  monitor)	haproxy_monitor;;
+  meta-data)	meta_data; exit $OCF_SUCCESS;;
+  validate-all)	haproxy_validate; exit $OCF_SUCCESS;;
+  *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
+esac
+exit $?

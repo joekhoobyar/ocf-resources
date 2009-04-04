@@ -122,17 +122,18 @@ mongrel_yml_to_vars() {
 	local key value config="$1"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
 	[ -z "$config" ] && exit $OCF_ERR_GENERIC
-
-	sed -e 's@^:@@g' <"$config" |
-	while IFS=": " read key value; do
-		[ -z "$value" ] || eval "MONGREL_$key=$value"
-	done
+	
+	while IFS=" " read key value; do
+		key=${key:1}
+		key=${key%:}
+		[ "${key:0:1}" = "-" ] && continue
+		[ -z "$value" ] || eval "export MONGREL_${key}=${value}"
+	done <"$config"
 
 	if ! [ -z "$MONGREL_CLUSTER"] && [ $OCF_RESKEY_server_index -lt $MONGREL_servers -a $OCF_RESKEY_server_index -ge 0 ]; then
 		let $MONGREL_port=$((MONGREL_port + $OCF_RESKEY_server_index))
 		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
-		echo $MONGREL_log_file $MONGREL_pid_file
 	fi
 }
 

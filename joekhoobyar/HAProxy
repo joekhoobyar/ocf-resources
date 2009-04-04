@@ -183,9 +183,12 @@ haproxy_start() {
 		return $OCF_SUCCESS
 	fi
 
-	jk_pidfile_prepare && $HAPROXY -p $OCF_RESKEY_pid -D >/dev/null 2>&1
-	retval=$?
+	if ! jk_pidfile_prepare; then
+		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"
+		return $OCF_ERR_GENERIC
+	fi
 
+	$HAPROXY -p $OCF_RESKEY_pid -D >/dev/null 2>&1; retval=$?
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		ocf_log err "HAProxy failed to start: error code $retval"
 		return $OCF_ERR_GENERIC

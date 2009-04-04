@@ -27,6 +27,7 @@
 #######################################################################
 
 : ${OCF_RESKEY_mongrel="/usr/bin/mongrel_rails"}
+: ${OCF_RESKEY_verify_start=1}
 
 usage() {
 cat <<END
@@ -175,7 +176,7 @@ mongrel_start() {
 		return $OCF_SUCCESS
 	fi
 
-	ERRORS=`$MONGREL ${MONGREL_CLUSTER}start $MONGREL_OPTIONS 2>&1`; retval=$?
+	ERRORS=`$MONGREL "${MONGREL_CLUSTER}start" $MONGREL_OPTIONS 2>&1`; retval=$?
 
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		[ -z "$ERRORS" ] && ERRORS="error code $retval"

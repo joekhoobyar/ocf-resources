@@ -172,7 +172,7 @@ monit_start() {
 		return $OCF_SUCCESS
 	fi
 
-	jk_pidfile_prepare && ERRORS=`$MONIT start 2>&1`
+	jk_pidfile_prepare && ERRORS=`$MONIT 2>&1`
 	RETVAL=$?
 	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
 

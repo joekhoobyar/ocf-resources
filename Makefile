@@ -1,3 +1,10 @@
+# Makefile for ocf-resources
+# http://github.com/joekhoobyar/ocf-resources
+#
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
+# Copyright (c) 2009 All Rights Reserved
+#
 RESOURCE_DIR = /usr/lib/ocf/resource.d
 JOEK_DIR = $(RESOURCE_DIR)/joekhoobyar
 JOEK_SCRIPTS = NGINX HAProxy Monit

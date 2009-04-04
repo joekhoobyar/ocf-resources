@@ -1,3 +1,8 @@
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
+#
+# Copyright (c) 2009 All Rights Reserved
+
 set daemon  150
 set logfile /tmp/monit.log
 set pidfile /tmp/monit.pid

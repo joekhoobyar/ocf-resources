@@ -1,4 +1,11 @@
 #!/bin/sh
+#
+# Monit OCF resource agent tests.
+#
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
+# Copyright (c) 2009 All Rights Reserved
+#
 
 chmod 600 $(dirname $0)/config/monitrc
 

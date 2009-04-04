@@ -1,12 +1,10 @@
 #!/bin/sh
 #
-# Description:	Manages an NGINX instance as an OCF High-Availability resource
-#								under Heartbeat/LinuxHA control
+# Description:	Directly manages an NGINX instance as a High-Availability OCF resource
+#								agent running on a Heartbeat/LinuxHA cluster.
 #
-# Author:	Joe Khoobyar
-#
-# License:	GNU General Public License (GPL)
-#
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
 # Copyright (c) 2009 All Rights Reserved
 #
 # See usage() function below for more details...

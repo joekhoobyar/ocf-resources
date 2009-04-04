@@ -13,7 +13,7 @@
 # OCF instance parameters:
 #   OCF_RESKEY_mongrel
 #   OCF_RESKEY_config
-#   OCF_RESKEY_server_index
+#   OCF_RESKEY_only
 #   OCF_RESKEY_monitor_url
 #		OCF_RESKEY_options
 #   OCF_RESKEY_renice
@@ -70,13 +70,12 @@ cat <<END
 					<shortdesc>Config file</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
-				<parameter name="server_index" required="0" unique="1">
+				<parameter name="only" required="0" unique="1">
 					<longdesc lang="en">
-						If this Mongrel is a member of a mongrel cluster, which numerical
-						index in the cluster is it?  The first port's index is 0, then 1,
-						and so on up to _servers_ - 1.
+						This Mongrel is a member of a mongrel cluster, analogous to
+						using the --only flag to the cluster::start mongrel command.
 					</longdesc>
-					<shortdesc>Server index</shortdesc>
+					<shortdesc>Only one port</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
 				<parameter name="monitor_url" required="0">
@@ -118,8 +117,9 @@ END
 mongrel_yml_to_vars() {
 	local key value config="$1"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
-	[ -z "$config" ] && exit $OCF_ERR_GENERIC
-	
+	[ -z "$config" ] && exit $OCF_ERR_ARGS
+
+	# Read all of the values from YML in a chap manner.
 	while IFS=" " read key value; do
 		key=${key:1}
 		key=${key%:}
@@ -127,30 +127,46 @@ mongrel_yml_to_vars() {
 		[ -z "$value" ] || eval "export MONGREL_${key}=${value}"
 	done <"$config"
 
-	if ! [ -z "$MONGREL_CLUSTER"] && [ $OCF_RESKEY_server_index -lt $MONGREL_servers -a $OCF_RESKEY_server_index -ge 0 ]; then
-		let $MONGREL_port=$((MONGREL_port + $OCF_RESKEY_server_index))
+	# Validate cluster membership a bit up front.
+	if ! [ -z "$OCF_RESKEY_only" ]; then
+
+		if [ -z "$MONGREL_port" ] || [ -z "$MONGREL_servers" ]; then
+			ocf_log err "Either port or the servers setting is invalid in $OCF_RESKEY_config"
+			exit $OCF_ERR_ARGS
+		fi
+
+		let MONGREL_port_max=$((MONGREL_port + $MONGREL_servers - 1))
+
+		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port ]; then
+			ocf_log err "The 'only $OCF_RESKEY_only' parameter conflicts with the port and the servers setting(s) in $OCF_RESKEY_config"
+			exit $OCF_ERR_ARGS
+		fi
+
+		# Create the "real" port, log_file, pid_file settings from the cluster settings.
 		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
+		let MONGREL_port=$OCF_RESKEY_only
+
+		# Differing commands for clustered vs. single mongrels.
+		MONGREL_start="$OCF_RESKEY_mongrel cluster::start -C $OCF_RESKEY_config --clean --only $MONGREL_port $OCF_RESKEY_options"
+		MONGREL_stop="$OCF_RESKEY_mongrel cluster::stop -C $OCF_RESKEY_config --clean --only $MONGREL_port $OCF_RESKEY_options"
+	else
+		MONGREL_start="$OCF_RESKEY_mongrel start -C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -c $MONGREL_cwd -r $MONGREL_docroot -d $OCF_RESKEY_options"
+		MONGREL_stop="$OCF_RESKEY_mongrel stop -P $MONGREL_pid_file -c $MONGREL_cwd"
 	fi
+
+	MONGREL_force_stop="$OCF_RESKEY_mongrel stop -P $MONGREL_pid_file -c $MONGREL_cwd -w 45 -f"
+	MONGREL_kill="kill -9 `cat $MONGREL_pid_file` && rm -f $MONGREL_pid_file"
 }
 
 mongrel_validate() {
-	if ! [ -z "$OCF_RESKEY_server_index" ]; then
-		if [ -z "$MONGREL_servers" ]; then
-			ocf_log warn "The configuration YML has no _servers_ entry, so _server_index_ has no effect."
-		elif [ $OCF_RESKEY_server_index -ge $MONGREL_servers -o $OCF_RESKEY_server_index -lt 0 ]; then
-			ocf_log err "Invalid configuration: _servers_ is '$MONGREL_servers', but _server_index_ is '$MONGREL_server_index'."
-			exit $OCF_ERR_ARGS
-		fi
-	elif ! [ -z "$MONGREL_servers" ]; then
-		ocf_log err "The configuration YML has a _servers_ entry, so _server_index_ is mandatory."
-		exit $OCF_ERR_ARGS
-	fi
-
 	[ -z "$MONGREL_log_file" ] || jk_validate_writable "$MONGREL_log_file"
 	[ -z "$MONGREL_pid_file" ] || jk_validate_writable "$MONGREL_pid_file"
 	[ -z "$MONGREL_address" ] || jk_validate_ip "$MONGREL_address"
 	[ -z "$MONGREL_cwd" ] || jk_validate_directory "$MONGREL_cwd"
+	if [ -z "$MONGREL_port" ] || ! ocf_is_decimal "$MONGREL_port"; then
+		exit $OCF_ERR_CONFIGURED
+	fi
 
 	return $OCF_SUCCESS
 }
@@ -176,7 +192,7 @@ mongrel_start() {
 		return $OCF_SUCCESS
 	fi
 
-	ERRORS=`$MONGREL "${MONGREL_CLUSTER}start" $MONGREL_OPTIONS 2>&1`; retval=$?
+	ERRORS=`$MONGREL_start 2>&1`; retval=$?
 
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		[ -z "$ERRORS" ] && ERRORS="error code $retval"
@@ -194,12 +210,12 @@ mongrel_stop() {
 	mongrel_status || return $OCF_SUCCESS
 
 	# Try really hard to kill this mongrel...
-	ERRORS=`$MONGREL "${MONGREL_CLUSTER}stop" -P $MONGREL_pid_file -c $MONGREL_cwd 2>&1`; retval=$?
-	if [ $retval -ne $OCF_SUCCESS ] || ! mongrel_status; then
-		ERRORS=`$MONGREL "${MONGREL_CLUSTER}stop" -P $MONGREL_pid_file -c $MONGREL_cwd -w 30 -f 2>&1`; retval=$?
+	ERRORS=`$MONGREL_stop 2>&1`; retval=$?
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		ERRORS="$ERRORS -- `$MONGREL_force_stop 2>&1`"; retval=$?
 		if [ $retval -ne $OCF_SUCCESS ]; then
-			kill -9 $MONGREL_pid_file; sleep 2
-			mongrel_status || return $OCF_SUCCESS
+			ERRORS="$ERRORS -- `$MONGREL_kill 2>&`"; retval $?
+			[ $retval -eq 0 ] && return 0
 		fi
 	fi
 
@@ -211,12 +227,9 @@ mongrel_stop() {
 }
 
 # We always need these before we can do anything else...
-[ -z "$OCF_RESKEY_server_index" ] || MONGREL_CLUSTER="cluster::"
 jk_validate_executable "$OCF_RESKEY_mongrel"
 jk_validate_readable "$OCF_RESKEY_config"
 mongrel_yml_to_vars
-MONGREL="$OCF_RESKEY_mongrel"
-MONGREL_OPTIONS="-C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -c $MONGREL_cwd -r $MONGREL_docroot -d $OCF_RESKEY_options"
 
 # What kind of method was invoked?
 case "$1" in

@@ -191,7 +191,7 @@ mongrel_start() {
 mongrel_stop() {
 	mongrel_status || return $OCF_SUCCESS
 
-	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop $MONGREL_OPTIONS 2>&1`
+	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`
 	RETVAL=$?
 	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
 

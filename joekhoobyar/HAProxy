@@ -169,17 +169,11 @@ haproxy_status() {
 haproxy_monitor() {
 	local retval
 	haproxy_status; retval=$?
-
-	[ $OCF_CHECK_LEVEL -lt 10 -o $retval -ne 0 ] && return $retval
-
-	# Monitor an URL, if configured to do so.
-	url="$OCF_RESKEY_monitor_url"
-	if ! [ -z "$url" ] && ! $WGET --spider -q -T 45 "$url"; then
-		ocf_log err "Monitoring of $url failed"
-		return $OCF_ERR_GENERIC
+	if [ $OCF_CHECK_LEVEL -lt 10 -o $retval -ne 0 ]; then
+		jk_monitor_url
+	else
+		return $retval
 	fi
-
-	return $OCF_SUCCESS
 }
 
 haproxy_start() {

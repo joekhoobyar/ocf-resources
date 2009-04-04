@@ -158,3 +158,14 @@ jk_resource_stop_by_pid() {
 	[ $retval -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
 	return $retval
 }
+
+jk_monitor_url() {
+	local url="$1"
+	[ -z "$url" ] && url="$OCF_RESKEY_monitor_url"
+
+	if ! [ -z "$url" ] && ! $WGET --spider -q -T 45 "$url"; then
+		ocf_log err "Monitoring of $url failed"
+		exit $OCF_ERR_GENERIC
+	fi
+	return $OCF_SUCCESS
+}

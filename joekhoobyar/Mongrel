@@ -121,7 +121,7 @@ mongrel_yml_to_vars() {
 
 	# Read all of the values from YML in a chap manner.
 	while IFS=" " read key value; do
-		key=${key:1}
+		key=${key#:}
 		key=${key%:}
 		[ "${key:0:1}" = "-" ] && continue
 		[ -z "$value" ] || eval "export MONGREL_${key}=${value}"

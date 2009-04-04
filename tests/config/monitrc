@@ -1,4 +1,7 @@
 set daemon  150
+set logfile /tmp/monit.log
+set pidfile /tmp/monit.pid
+set statefile /tmp/monit.state
 
 set mailserver localhost with timeout 15 seconds
 set mail-format { from: root@localhost }

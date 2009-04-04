@@ -8,6 +8,7 @@ ocf-tester -n monit-test \
 	-o log=/tmp/monit.log \
 	-o pid=/tmp/monit.pid \
 	-o state=/tmp/monit.state \
+	-o interval=150 \
 	$(dirname $0)/../joekhoobyar/monit
 RETVAL=$?
 

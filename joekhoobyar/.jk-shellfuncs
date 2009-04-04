@@ -31,6 +31,17 @@ jk_validate_writable() {
 	return 0
 }
 
+jk_validate_directory() {
+	while [ $# -gt 0 ]; do
+		if [ ! -r $1 -o ! -d $1 -o ! -x $1 ]; then
+			ocf_log err "$1 is either missing or unreadable"
+			exit $OCF_ERR_CONFIGURED
+		fi
+		shift
+	done
+	return 0
+}
+
 jk_validate_config() {
 	local command=$1
 	local config=$2
@@ -45,6 +56,10 @@ jk_validate_config() {
 	return 0
 }
 
+# This idea was taken from Heartbeat's IPAddr2 resource script.
+jk_validate_ip() {
+	$IP2UTIL -o -f inet addr show | grep "\ $1/" | cut -d ' ' -f2 | grep -v '^ipsec[0-9][0-9]*$' | fgrep "$1"
+}
 
 jk_pidfile_prepare() {
 	local ownership=$1

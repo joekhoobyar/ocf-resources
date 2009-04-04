@@ -1,6 +1,5 @@
 set daemon  150
-allow localhost
-set logfile syslog facility log_daemon
+
 set mailserver localhost with timeout 15 seconds
 set mail-format { from: root@localhost }
 set alert root@localhost but not on { changed, instance }

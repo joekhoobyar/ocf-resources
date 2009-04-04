@@ -185,22 +185,20 @@ mongrel_start() {
 		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $MONGREL_pid_file || true
 	fi
 
-	return $OCF_SUCCESS
+	jk_verify_start_by_pid 'Mongrel' $MONGREL_pid_file
 }
 
 mongrel_stop() {
 	local retval
 	mongrel_status || return $OCF_SUCCESS
 
-	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`; retval=$?
+	ERRORS=`$MONGREL "${MONGREL_CLUSTER}stop" -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`; retval=$?
 
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		[ -z "$ERRORS" ] && ERRORS="error code $retval"
 		ocf_log err "Mongrel failed to stop: $ERRORS"
 		return $OCF_ERR_GENERIC
 	fi
-
-	return $OCF_SUCCESS
 }
 
 # We always need these before we can do anything else...

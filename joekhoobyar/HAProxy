@@ -169,7 +169,7 @@ haproxy_status() {
 haproxy_monitor() {
 	local retval
 	haproxy_status; retval=$?
-	if [ $OCF_CHECK_LEVEL -lt 10 -o $retval -ne 0 ]; then
+	if [ $retval -eq 0 -a $OCF_CHECK_LEVEL -ge 10 ]; then
 		jk_monitor_url
 	else
 		return $retval

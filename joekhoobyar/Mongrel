@@ -209,7 +209,7 @@ jk_validate_executable "$OCF_RESKEY_mongrel"
 jk_validate_readable "$OCF_RESKEY_config"
 mongrel_yml_to_vars
 MONGREL="$OCF_RESKEY_mongrel"
-MONGREL_OPTIONS="-C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -r $MONGREL_docroot $OCF_RESKEY_options"
+MONGREL_OPTIONS="-C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -c $MONGREL_cwd -r $MONGREL_docroot -d $OCF_RESKEY_options"
 
 # What kind of method was invoked?
 case "$1" in

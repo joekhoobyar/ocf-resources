@@ -112,15 +112,14 @@ jk_resource_status_by_pid() {
 }
 
 jk_verify_start_by_pid() {
-	local retval pidfile=$2
+	local pidfile=$2
 	local waiting=$OCF_RESKEY_verify_start
 	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
 
 	while [ "$waiting" = 1 ]; do
 		jk_pidfile_status $pidfile && return $OCF_SUCCESS
-
-		if [ $retval -gt 2 ]; then
-			ocf_log err "$1 failed to start: $retval"
+		if [ $? -gt 2 ]; then
+			ocf_log err "$1 failed to start"
 			return $OCF_ERR_GENERIC
 		fi
 
@@ -130,7 +129,7 @@ jk_verify_start_by_pid() {
 }
 
 jk_verify_stop_by_pid() {
-	local retval pidfile=$2
+	local pidfile=$2
 	local waiting=$OCF_RESKEY_verify_stop
 	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
 

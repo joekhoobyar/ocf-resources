@@ -10,8 +10,6 @@
 ocf-tester -n mongrel-test \
 	-o mongrel=$(which mongrel_rails) \
 	-o config=$(dirname $0)/config/mongrel.yml \
-	-o pid=/tmp/mongrel.pid \
-	-o log=/tmp/mongrel.log \
 	-o monitor_url=http://localhost:8088/ \
 	$(dirname $0)/../joekhoobyar/Mongrel
 RETVAL=$?

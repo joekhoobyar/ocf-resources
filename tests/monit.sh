@@ -9,7 +9,7 @@ ocf-tester -n monit-test \
 	-o pid=/tmp/monit.pid \
 	-o state=/tmp/monit.state \
 	-o interval=150 \
-	$(dirname $0)/../joekhoobyar/monit
+	$(dirname $0)/../joekhoobyar/Monit
 RETVAL=$?
 
 rm -f /tmp/monit.{log,pid,state}

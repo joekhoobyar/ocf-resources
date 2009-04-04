@@ -15,7 +15,7 @@ all: check
 
 joek-resources: $(addprefix joekhoobyar/, $(JOEK_RESOURCES))
 	mkdir -p gen
-	for i in $(JOEK_RESOURCES); do sed -e 's@\$$(dirname \$$0)@'$(RESOURCE_DIR)'/joekhoobyar/@g' <joekhoobyar/$$i >>gen/$$i; done
+	for i in $(JOEK_RESOURCES); do sed -e 's@\$$(dirname \$$0)@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar@g' <joekhoobyar/$$i >>gen/$$i; done
 
 install: install-all
 

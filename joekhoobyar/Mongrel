@@ -193,7 +193,7 @@ mongrel_stop() {
 	local retval
 	mongrel_status || return $OCF_SUCCESS
 
-	ERRORS=`$MONGREL "${MONGREL_CLUSTER}stop" -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`; retval=$?
+	ERRORS=`$MONGREL "${MONGREL_CLUSTER}stop" -P $MONGREL_pid_file -c $MONGREL_cwd -w 45 -f 2>&1`; retval=$?
 
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		[ -z "$ERRORS" ] && ERRORS="error code $retval"

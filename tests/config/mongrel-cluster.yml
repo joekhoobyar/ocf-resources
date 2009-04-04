@@ -1,0 +1,11 @@
+---
+user: nobody
+cwd: /tmp/mongrel-test
+log_file: /tmp/mongrel.log
+port: "8088"
+address: 127.0.0.1
+environment: production
+pid_file: /tmp/mongrel.pid
+servers: 2
+docroot: /tmp/mongrel-test/public
+daemonize: true

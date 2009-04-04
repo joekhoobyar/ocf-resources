@@ -216,7 +216,6 @@ case "$1" in
   start)	mongrel_validate; mongrel_start;;
   stop)		mongrel_stop;;
   status)	mongrel_status;;
-  reload)	mongrel_reload;;
   monitor)	mongrel_monitor;;
   meta-data)	meta_data; exit $OCF_SUCCESS;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;

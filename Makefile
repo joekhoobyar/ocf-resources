@@ -8,14 +8,15 @@
 RESOURCE_DIR = /usr/lib/ocf/resource.d
 JOEK_DIR = $(RESOURCE_DIR)/joekhoobyar
 JOEK_SCRIPTS = NGINX HAProxy Monit Mongrel
-JOEK_FUNCS = .jk-shellfuncs
+JOEK_FUNCS = jk-shellfuncs
 JOEK_RESOURCES = $(JOEK_SCRIPTS) $(JOEK_FUNCS)
 
 all: check
 
 joek-resources: $(addprefix joekhoobyar/, $(JOEK_RESOURCES))
 	mkdir -p gen
-	for i in $(JOEK_RESOURCES); do sed -e 's@\$$(dirname \$$0)@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar@g' <joekhoobyar/$$i >>gen/$$i; done
+	for i in $(JOEK_FUNCS); do cp joekhoobyar/$$i gen/.$$i; done
+	for i in $(JOEK_SCRIPTS); do sed -e 's@\$$(dirname \$$0)@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar@g' <joekhoobyar/$$i >>gen/$$i; done
 
 install: install-all
 
@@ -29,7 +30,7 @@ $(JOEK_DIR): $(RESOURCE_DIR)
 install-joek-scripts: $(addprefix gen/, $(JOEK_SCRIPTS))
 	install -m 755 -o root -g root $^ $(JOEK_DIR)
 
-install-joek-funcs: $(addprefix gen/, $(JOEK_FUNCS))
+install-joek-funcs: $(addprefix gen/., $(JOEK_FUNCS))
 	install -m 644 -o root -g root $^ $(JOEK_DIR)
 
 install-heartbeat-resources: $(RESOURCE_DIR)/heartbeat

@@ -84,14 +84,14 @@ cat <<END
 					<shortdesc>PID file</shortdesc>
 					<content type="string" default="/var/run/nginx.pid"/>
 				</parameter>
-				<parameter name="pid_owner" required="1">
+				<parameter name="pid_owner" required="0">
 					<longdesc lang="en">
 						User who should own the PID file.
 					</longdesc>
 					<shortdesc>PID file owner</shortdesc>
 					<content type="string" default="nobody"/>
 				</parameter>
-				<parameter name="pid_group" required="1">
+				<parameter name="pid_group" required="0">
 					<longdesc lang="en">
 						Group which should own the PID file.
 					</longdesc>

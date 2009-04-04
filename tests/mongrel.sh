@@ -7,9 +7,7 @@
 # Copyright (c) 2009 All Rights Reserved
 #
 
-mkdir /tmp/mongrel-html &&
-	touch /tmp/mongrel-html/index.html
-
+rails /tmp/mongrel-test -d sqlite3
 
 ocf-tester -n mongrel-test \
 	-o mongrel=$(which mongrel_rails) \
@@ -19,6 +17,6 @@ ocf-tester -n mongrel-test \
 RETVAL=$?
 
 rm -f /tmp/mongrel.{log,pid}
-rm -rf /tmp/mongrel-html
+rm -rf /tmp/mongrel-test
 
 exit $RETVAL

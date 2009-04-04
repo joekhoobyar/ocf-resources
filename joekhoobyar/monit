@@ -150,7 +150,7 @@ END
 }
 
 MONIT="$OCF_RESKEY_monit -c $OCF_RESKEY_config $OCF_RESKEY_options"
-[ -z "$OCF_RESKEY_interval" ] || MONIT="$MONIT $OCF_RESKEY_interval"
+[ -z "$OCF_RESKEY_interval" ] || MONIT="$MONIT -d $OCF_RESKEY_interval"
 
 monit_validate() {
 	jk_validate_executable "$OCF_RESKEY_monit"

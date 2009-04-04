@@ -143,9 +143,10 @@ mongrel_yml_to_vars() {
 		fi
 
 		# Create the "real" port, log_file, pid_file settings from the cluster settings.
+		let MONGREL_port_min=$OCF_RESKEY_port
+		let MONGREL_port=$OCF_RESKEY_only
 		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
-		let MONGREL_port=$OCF_RESKEY_only
 
 		# Differing commands for clustered vs. single mongrels.
 		MONGREL_start="$OCF_RESKEY_mongrel cluster::start -C $OCF_RESKEY_config --clean --only $MONGREL_port $OCF_RESKEY_options"

@@ -155,7 +155,7 @@ mongrel_validate() {
 }
 
 mongrel_status() {
-	jk_resource_status_by_pid 'Mongrel', "$MONGREL_pid_file"
+	jk_resource_status_by_pid 'Mongrel' "$MONGREL_pid_file"
 }
 
 mongrel_monitor() {

@@ -79,7 +79,7 @@ jk_pidfile_status() {
 
 	# Missing...
 	[ -e $pidfile ] || return 2
-	pid=`cat $pidfile`
+	pid=`cat $pidfile 2>&1`
 
 	# Valid or purgable...
 	if [ "u$pid" != "u" ] && ocf_is_decimal $pid; then

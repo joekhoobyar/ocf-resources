@@ -226,6 +226,11 @@ mongrel_stop() {
 	fi
 }
 
+# Do this first, in case some settings are bad.
+if [ "$1" = "meta-data" ]; then
+	meta_data; exit $OCF_SUCCESS
+fi
+
 # We always need these before we can do anything else...
 jk_validate_executable "$OCF_RESKEY_mongrel"
 jk_validate_readable "$OCF_RESKEY_config"
@@ -237,7 +242,6 @@ case "$1" in
   stop)		mongrel_stop;;
   status)	mongrel_status;;
   monitor)	mongrel_monitor;;
-  meta-data)	meta_data; exit $OCF_SUCCESS;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
   *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
 esac

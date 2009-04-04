@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Monit OCF resource agent tests.
+# Mongrel OCF resource agent tests.
 #
 # Author:		Joe Khoobyar <joe@ankhcraft.com>
 # License:	GNU General Public License (GPL) version 2

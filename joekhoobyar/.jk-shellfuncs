@@ -20,6 +20,17 @@ jk_validate_readable() {
 	return 0
 }
 
+jk_validate_writable() {
+	while [ $# -gt 0 ]; do
+		if [ ! -w $1 -a ! -w $(dirname $1) ]; then
+			ocf_log err "$1 or it's parent directory is unwritable, or the latter is missing"
+			exit $OCF_ERR_CONFIGURED
+		fi
+		shift
+	done
+	return 0
+}
+
 jk_validate_config() {
 	local command=$1
 	local config=$2

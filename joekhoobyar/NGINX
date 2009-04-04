@@ -162,16 +162,18 @@ nginx_monitor() {
 }
 
 nginx_start() {
+	local retval
+
 	if nginx_status; then
 		ocf_log debug "NGINX is already running"
 		return $OCF_SUCCESS
 	fi
 
 	jk_pidfile_prepare && ERRORS=`$NGINX 2>&1`
-	RETVAL=$?
-	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
+	retval=$?
+	[ -z "$ERRORS" -a "$retval" -ne 0 ] && ERRORS="error code $retval"
 
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+	if [ $retval -ne $OCF_SUCCESS ]; then
 		ocf_log err "NGINX failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else

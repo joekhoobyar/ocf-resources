@@ -183,16 +183,18 @@ haproxy_monitor() {
 }
 
 haproxy_start() {
+	local retval
+
 	if haproxy_status; then
 		ocf_log debug "HAProxy is already running"
 		return $OCF_SUCCESS
 	fi
 
 	jk_pidfile_prepare && $HAPROXY -p $OCF_RESKEY_pid -D >/dev/null 2>&1
-	RETVAL=$?
+	retval=$?
 
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "HAProxy failed to start: error code $RETVAL"
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		ocf_log err "HAProxy failed to start: error code $retval"
 		return $OCF_ERR_GENERIC
 	else
 		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true

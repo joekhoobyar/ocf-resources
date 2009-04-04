@@ -167,6 +167,10 @@ mongrel_validate() {
 	if [ -z "$MONGREL_port" ] || ! ocf_is_decimal "$MONGREL_port"; then
 		exit $OCF_ERR_CONFIGURED
 	fi
+  if [ -z "$MONGREL_user" -a -n "$MONGREL_group" ] || [ -z "$MONGREL_group" -a -n "$MONGREL_user" ]; then
+		ocf_log err "You can't specify a user without a group or vice-versa."
+		exit $OCF_ERR_CONFIGURED
+	fi
 
 	return $OCF_SUCCESS
 }

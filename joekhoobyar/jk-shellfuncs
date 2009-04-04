@@ -92,7 +92,7 @@ jk_pidfile_status() {
 	return 1
 }
 
-jk_resource_status_by_pid() {
+jk_resource_monitor_by_pid() {
 	local retval pidfile=$2
 	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
 
@@ -111,15 +111,22 @@ jk_resource_status_by_pid() {
 	return $OCF_NOT_RUNNING
 }
 
+jk_resource_status_by_pid() {
+	local retval
+	jk_resource_monitor_by_pid "$@"; retval=$?
+	[ $retval -eq $OCF_NOT_RUNNING ] && retval=3
+	return $retval
+}
+
 jk_resource_exit_if_started_by_pid() {
-	if jk_resource_status_by_pid "$@"; then
+	if jk_resource_monitor_by_pid "$@"; then
 		ocf_log debug "$1 is already running"
 		exit $OCF_SUCCESS
 	fi
 }
 
 jk_resource_exit_if_stopped_by_pid() {
-	jk_resource_status_by_pid "$@" || return
+	jk_resource_monitor_by_pid "$@" || return
 	ocf_log debug "$1 is stopped"
 	exit $OCF_SUCCESS
 }
@@ -171,7 +178,7 @@ jk_verify_stop_by_pid() {
 jk_resource_signal_by_pid() {
 	local retval name="$1" signal="$2"
 	shift 2
-	jk_resource_status_by_pid "$name" "$@"; retval=$?
+	jk_resource_monitor_by_pid "$name" "$@"; retval=$?
 
 	if [ $retval -eq 0 ]; then
 		[ -z "$signal" ] || signal="-$signal"

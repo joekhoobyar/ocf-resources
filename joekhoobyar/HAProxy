@@ -167,7 +167,7 @@ haproxy_status() {
 
 haproxy_monitor() {
 	local retval
-	haproxy_status; retval=$?
+	jk_resource_monitor_by_pid 'HAProxy'; retval=$?
 	if [ $retval -eq 0 -a $OCF_CHECK_LEVEL -ge 10 ]; then
 		jk_monitor_url
 	else
@@ -178,7 +178,7 @@ haproxy_monitor() {
 haproxy_start() {
 	local retval
 
-	if haproxy_status; then
+	if jk_resource_monitor_by_pid 'HAProxy'; then
 		ocf_log debug "HAProxy is already running"
 		return $OCF_SUCCESS
 	fi

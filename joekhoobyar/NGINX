@@ -145,7 +145,7 @@ nginx_status() {
 
 nginx_monitor() {
 	local retval
-	nginx_status; retval=$?
+	jk_resource_monitor_by_pid 'NGINX'; retval=$?
 	if [ $retval -eq 0 -a $OCF_CHECK_LEVEL -ge 10 ]; then
 		jk_monitor_url
 	else
@@ -156,7 +156,7 @@ nginx_monitor() {
 nginx_start() {
 	local retval
 
-	if nginx_status; then
+	if jk_resource_monitor_by_pid 'NGINX'; then
 		ocf_log debug "NGINX is already running"
 		return $OCF_SUCCESS
 	fi

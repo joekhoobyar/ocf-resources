@@ -114,10 +114,6 @@ cat <<END
 END
 }
 
-MONGREL="$OCF_RESKEY_mongrel"
-MONGREL_OPTIONS="-C $OCF_RESKEY_config $OCF_RESKEY_options"
-[ -z "$OCF_RESKEY_server_index" ] || MONGREL_CLUSTER="cluster::"
-
 mongrel_yml_to_vars() {
 	local key value config="$1"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
@@ -208,9 +204,12 @@ mongrel_stop() {
 }
 
 # We always need these before we can do anything else...
+[ -z "$OCF_RESKEY_server_index" ] || MONGREL_CLUSTER="cluster::"
 jk_validate_executable "$OCF_RESKEY_mongrel"
 jk_validate_readable "$OCF_RESKEY_config"
 mongrel_yml_to_vars
+MONGREL="$OCF_RESKEY_mongrel"
+MONGREL_OPTIONS="-C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -r $MONGREL_docroot $OCF_RESKEY_options"
 
 # What kind of method was invoked?
 case "$1" in

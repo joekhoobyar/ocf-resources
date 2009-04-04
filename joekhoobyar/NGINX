@@ -161,11 +161,14 @@ nginx_start() {
 		return $OCF_SUCCESS
 	fi
 
-	jk_pidfile_prepare && ERRORS=`$NGINX 2>&1`
-	retval=$?
-	[ -z "$ERRORS" -a "$retval" -ne 0 ] && ERRORS="error code $retval"
+	if ! jk_pidfile_prepare; then
+		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"
+		return $OCF_ERR_GENERIC
+	fi
 
+	ERRORS=`$NGINX 2>&1`; retval=$?
 	if [ $retval -ne $OCF_SUCCESS ]; then
+		[ -z "$ERRORS" ] && ERRORS="error code $retval"
 		ocf_log err "NGINX failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else

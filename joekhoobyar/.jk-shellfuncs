@@ -43,8 +43,7 @@ jk_validate_directory() {
 }
 
 jk_validate_config() {
-	local command=$1
-	local config=$2
+	local retval command="$1" config="$2"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
 	[ -z "$config" ] || jk_validate_readable "$config"
 

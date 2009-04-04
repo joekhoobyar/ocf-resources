@@ -9,10 +9,11 @@
 
 rm -rf /tmp/mongrel-test
 rails /tmp/mongrel-test -d sqlite3
+cp $(dirname $0)/config/mongrel.yml /tmp/mongrel-test/config/mongrel.yml
 
 ocf-tester -n mongrel-test \
 	-o mongrel=$(which mongrel_rails) \
-	-o config=$(dirname $0)/config/mongrel.yml \
+	-o config=/tmp/mongrel-test/config/mongrel.yml \
 	-o monitor_url=http://localhost:8088/ \
 	$(dirname $0)/../joekhoobyar/Mongrel
 RETVAL=$?

@@ -6,3 +6,4 @@
 :pid_file: /tmp/mongrel.pid
 :cwd: /tmp/mongrel-test
 :docroot: /tmp/mongrel-test/public
+:daemonize: true

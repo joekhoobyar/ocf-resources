@@ -8,7 +8,8 @@
 #
 
 rm -rf /tmp/mongrel-test
-rails /tmp/mongrel-test -d sqlite3
+echo "Generating a test Rails app in /tmp/mongrel-test..."
+rails /tmp/mongrel-test -d sqlite3 2>/dev/null >/dev/null
 cp $(dirname $0)/config/mongrel.yml /tmp/mongrel-test/config/mongrel.yml
 
 ocf-tester -n mongrel-test \

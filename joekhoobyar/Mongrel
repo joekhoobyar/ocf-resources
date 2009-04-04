@@ -169,16 +169,16 @@ mongrel_monitor() {
 }
 
 mongrel_start() {
+	local retval
 	if mongrel_status; then
 		ocf_log debug "Mongrel is already running"
 		return $OCF_SUCCESS
 	fi
 
-	ERRORS=`$MONGREL ${MONGREL_CLUSTER}start $MONGREL_OPTIONS 2>&1`
-	RETVAL=$?
-	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
+	ERRORS=`$MONGREL ${MONGREL_CLUSTER}start $MONGREL_OPTIONS 2>&1`; retval=$?
 
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		[ -z "$ERRORS" ] && ERRORS="error code $retval"
 		ocf_log err "Mongrel failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else
@@ -189,13 +189,13 @@ mongrel_start() {
 }
 
 mongrel_stop() {
+	local retval
 	mongrel_status || return $OCF_SUCCESS
 
-	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`
-	RETVAL=$?
-	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
+	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop -P $MONGREL_pid_file -d $MONGREL_cwd -w 45 -f 2>&1`; retval=$?
 
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		[ -z "$ERRORS" ] && ERRORS="error code $retval"
 		ocf_log err "Mongrel failed to stop: $ERRORS"
 		return $OCF_ERR_GENERIC
 	fi

@@ -7,6 +7,10 @@
 # Copyright (c) 2009 All Rights Reserved
 #
 
+mkdir /tmp/mongrel-html &&
+	touch /tmp/mongrel-html/index.html
+
+
 ocf-tester -n mongrel-test \
 	-o mongrel=$(which mongrel_rails) \
 	-o config=$(dirname $0)/config/mongrel.yml \
@@ -15,5 +19,6 @@ ocf-tester -n mongrel-test \
 RETVAL=$?
 
 rm -f /tmp/mongrel.{log,pid}
+rm -rf /tmp/mongrel-html
 
 exit $RETVAL

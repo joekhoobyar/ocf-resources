@@ -20,5 +20,6 @@ ocf-tester -n nginx-test \
 RETVAL=$?
 
 rm -f /tmp/nginx.{log,pid}
+rm -rf /tmp/nginx-html
 
 exit $RETVAL

@@ -197,7 +197,7 @@ monit_stop() {
 	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
 
 	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "Monit failed to start: $ERRORS"
+		ocf_log err "Monit failed to stop: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else
 		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true

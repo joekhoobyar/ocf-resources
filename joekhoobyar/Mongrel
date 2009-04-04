@@ -123,15 +123,16 @@ mongrel_yml_to_vars() {
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
 	[ -z "$config" ] && exit $OCF_ERR_GENERIC
 
-	sed -e 's@^#@@g' <"$config" |
-	while IFS=":" read key value; do
+	sed -e 's@^:@@g' <"$config" |
+	while IFS=": " read key value; do
 		[ -z "$value" ] || eval "MONGREL_$key=$value"
 	done
 
-	if ! [ -z "$MONGREL_CLUSTER" -a $OCF_RESKEY_server_index -lt $MONGREL_servers -a $OCF_RESKEY_server_index -ge 0 ]; then
+	if ! [ -z "$MONGREL_CLUSTER"] && [ $OCF_RESKEY_server_index -lt $MONGREL_servers -a $OCF_RESKEY_server_index -ge 0 ]; then
 		let $MONGREL_port=$((MONGREL_port + $OCF_RESKEY_server_index))
 		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
+		echo $MONGREL_log_file $MONGREL_pid_file
 	fi
 }
 
@@ -141,10 +142,16 @@ mongrel_validate() {
 
 	mongrel_yml_to_vars
 
-	if [ -z "$OCF_RESKEY_server_index" ]; then
-		[ -z "$MONGREL_servers" ] && ocf_log warn "The configuration YML has no _servers_ entry, so _server_index_ has no effect."
-	elif [ $OCF_RESKEY_server_index -ge $MONGREL_servers -o $OCF_RESKEY_server_index -lt 0 ]; then
-		ocf_log err "Invalid configuration: _servers_ is '$MONGREL_servers', but _server_index_ is '$MONGREL_server_index'."
+	if ! [ -z "$OCF_RESKEY_server_index" ]; then
+		if [ -z "$MONGREL_servers" ]; then
+			ocf_log warn "The configuration YML has no _servers_ entry, so _server_index_ has no effect."
+		elif [ $OCF_RESKEY_server_index -ge $MONGREL_servers -o $OCF_RESKEY_server_index -lt 0 ]; then
+			ocf_log err "Invalid configuration: _servers_ is '$MONGREL_servers', but _server_index_ is '$MONGREL_server_index'."
+			exit $OCF_ERR_ARGS
+		fi
+	elif ! [ -z "$MONGREL_servers" ]; then
+		ocf_log err "The configuration YML has a _servers_ entry, so _server_index_ is mandatory."
+		exit $OCF_ERR_ARGS
 	fi
 
 	[ -z "$MONGREL_log_file" ] || jk_validate_writable "$MONGREL_log_file"

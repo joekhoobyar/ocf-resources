@@ -121,6 +121,7 @@ jk_resource_exit_if_started_by_pid() {
 jk_resource_exit_if_stopped_by_pid() {
 	jk_resource_status_by_pid "$@" || return
 	ocf_log debug "$1 is stopped"
+	exit $OCF_SUCCESS
 }
 
 jk_resource_start_by_command() {

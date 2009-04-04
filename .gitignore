@@ -1,3 +1,4 @@
+.project
 gen
 *.log
 .DS_Store

@@ -99,9 +99,10 @@ jk_resource_status_by_pid() {
 	jk_pidfile_status $pidfile; retval=$?
 
 	if [ $retval -eq 0 ]; then
+		ocf_log debug "$1 is running"
 		return $OCF_SUCCESS
 	elif [ $retval -eq 1 ]; then
-		ocf_log debug "$1 not running: removing PID file"
+		ocf_log info "$1 not running: removing PID file"
 		rm -f $pidfile
 	else
 		ocf_log debug "$1 is not running"

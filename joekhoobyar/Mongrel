@@ -156,7 +156,7 @@ mongrel_yml_to_vars() {
 	fi
 
 	MONGREL_force_stop="$OCF_RESKEY_mongrel stop -P $MONGREL_pid_file -c $MONGREL_cwd -w 45 -f"
-	MONGREL_kill="kill -9 `cat $MONGREL_pid_file` && rm -f $MONGREL_pid_file"
+	MONGREL_kill="( cat $MONGREL_pid_file | xargs kill -9 ) && rm -f $MONGREL_pid_file"
 }
 
 mongrel_validate() {

@@ -155,7 +155,7 @@ MONIT="$OCF_RESKEY_monit -c $OCF_RESKEY_config $OCF_RESKEY_options"
 monit_validate() {
 	jk_validate_executable "$OCF_RESKEY_monit"
 	jk_validate_config "$MONIT -t" "$OCF_RESKEY_config"
-	jk_validate_readable "$OCF_RESKEY_log" "$OCF_RESKEY_state"
+	jk_validate_writable "$OCF_RESKEY_log" "$OCF_RESKEY_state"
 }
 
 monit_status() {

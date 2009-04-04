@@ -4,4 +4,5 @@
 :address: 127.0.0.1
 :environment: production
 :pid_file: /tmp/mongrel.pid
+:cwd: /tmp/mongrel-test
 :docroot: /tmp/mongrel-test/public

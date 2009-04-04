@@ -119,9 +119,9 @@ jk_verify_start_by_pid() {
 	while [ "$waiting" = 1 ]; do
 		jk_pidfile_status $pidfile && return $OCF_SUCCESS
 
-		if [ $retval -eq 2 -o -z "$pid" ]; then
+		if [ $retval -gt 2 ]; then
 			ocf_log err "$1 failed to start: $retval"
-			return $OCF_NOT_RUNNING
+			return $OCF_ERR_GENERIC
 		fi
 
 		sleep 2

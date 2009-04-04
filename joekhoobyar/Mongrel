@@ -1,0 +1,218 @@
+#!/bin/sh
+#
+# Description:	Directly manages a Mongrel instance as a High-Availability OCF resource
+#								agent running on a Heartbeat/LinuxHA cluster.
+#
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
+# Copyright (c) 2009 All Rights Reserved
+#
+#
+# See usage() function below for more details...
+#
+# OCF instance parameters:
+#   OCF_RESKEY_mongrel
+#   OCF_RESKEY_config
+#   OCF_RESKEY_server_index
+#   OCF_RESKEY_monitor_url
+#		OCF_RESKEY_options
+#   OCF_RESKEY_renice
+
+#######################################################################
+# Initialization:
+
+. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
+. $(dirname $0)/.jk-shellfuncs
+
+#######################################################################
+
+: ${OCF_RESKEY_mongrel="/usr/bin/mongrel_rails"}
+
+usage() {
+cat <<END
+
+usage: $0 (start|stop|status|monitor|meta-data|validate-all)
+
+$0 manages Mongrel as an OCF resource.
+
+The 'start' operation starts Mongrel.
+The 'stop' operation stops Mongrel.
+The 'status' operation reports whether Mongrel is running.
+The 'monitor' operation reports whether Mongrel seems to be working.
+The 'meta-data' operation reports the configuration options.
+The 'validate-all' operation reports whether the parameters are valid.
+
+END
+}
+
+meta_data() {
+cat <<END
+
+<?xml version="1.0" ?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="Mongrel">
+    <version>1.0</version>
+      <longdesc lang="en">This is an OCF resource agent for the Mongrel web server</longdesc>
+      <shortdesc lang="en">OCF resource agent for Mongrel</shortdesc>
+      <parameters>
+				<parameter name="mongrel" required="1" unique="0">
+					<longdesc lang="en">
+						Full path to the Mongrel executable.
+					</longdesc>
+					<shortdesc>Mongrel executable</shortdesc>
+					<content type="string" default="/usr/bin/mongrel_rails"/>
+				</parameter>
+				<parameter name="config" required="1" unique="0">
+					<longdesc lang="en">
+						Full path to the Mongrel configuration file for this instance.
+					</longdesc>
+					<shortdesc>Config file</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="server_index" required="0" unique="1">
+					<longdesc lang="en">
+						If this Mongrel is a member of a mongrel cluster, which numerical
+						index in the cluster is it?  The first port's index is 0, then 1,
+						and so on up to _servers_ - 1.
+					</longdesc>
+					<shortdesc>Server index</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="monitor_url" required="0">
+					<longdesc lang="en">
+						Optional URL to use for monitoring Mongrel with wget when the
+						OCF_CHECK_LEVEL is 10 or above.
+					</longdesc>
+					<shortdesc>URL to monitor</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="options" required="0">
+					<longdesc lang="en">
+						Any additional options to pass to the Mongrel command.
+					</longdesc>
+					<shortdesc>Extra options</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="renice" required="0">
+					<longdesc lang="en">
+						Optional value to pass to renice Mongrel with after starting it.
+					</longdesc>
+					<shortdesc>renice value</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+		</parameters>
+    <actions>
+      <action name="start" timeout="30" />
+      <action name="stop" timeout="30" />
+      <action name="status" timeout="20" />
+      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
+      <action name="meta-data" timeout="5" />
+      <action name="validate-all" timeout="5" />
+   </actions>
+</resource-agent>
+
+END
+}
+
+MONGREL="$OCF_RESKEY_mongrel"
+MONGREL_OPTIONS="-C $OCF_RESKEY_config $OCF_RESKEY_options"
+[ -z "$OCF_RESKEY_server_index" ] || MONGREL_CLUSTER="cluster::"
+
+mongrel_yml_to_vars() {
+	local key value config="$1"
+	[ -z "$config" ] && config="$OCF_RESKEY_config"
+	[ -z "$config" ] && exit $OCF_ERR_GENERIC
+
+	sed -e 's@^#@@g' <"$config" |
+	while IFS=":" read key value; do
+		[ -z "$value" ] || eval "MONGREL_$key=$value"
+	done
+
+	if ! [ -z "$MONGREL_CLUSTER" -a $OCF_RESKEY_server_index -lt $MONGREL_servers -a $OCF_RESKEY_server_index -ge 0 ]; then
+		let $MONGREL_port=$((MONGREL_port + $OCF_RESKEY_server_index))
+		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
+		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
+	fi
+}
+
+mongrel_validate() {
+	jk_validate_executable "$OCF_RESKEY_mongrel"
+	jk_validate_readable "$OCF_RESKEY_config"
+
+	mongrel_yml_to_vars
+
+	if [ -z "$OCF_RESKEY_server_index" ]; then
+		[ -z "$MONGREL_servers" ] && ocf_log warn "The configuration YML has no _servers_ entry, so _server_index_ has no effect."
+	elif [ $OCF_RESKEY_server_index -ge $MONGREL_servers -o $OCF_RESKEY_server_index -lt 0 ]; then
+		ocf_log err "Invalid configuration: _servers_ is '$MONGREL_servers', but _server_index_ is '$MONGREL_server_index'."
+	fi
+
+	[ -z "$MONGREL_log_file" ] || jk_validate_writable "$MONGREL_log_file"
+	[ -z "$MONGREL_pid_file" ] || jk_validate_writable "$MONGREL_pid_file"
+	[ -z "$MONGREL_address" ] || jk_validate_ip "$MONGREL_address"
+	[ -z "$MONGREL_cwd" ] || jk_validate_directory "$MONGREL_cwd"
+
+	return $OCF_SUCCESS
+}
+
+mongrel_status() {
+	jk_resource_status_by_pid 'Mongrel', "$MONGREL_pid_file"
+}
+
+mongrel_monitor() {
+	local retval
+	mongrel_status; retval=$?
+	if [ $retval -eq 0 -a $OCF_CHECK_LEVEL -ge 10 ]; then
+		jk_monitor_url
+	else
+		return $retval
+	fi
+}
+
+mongrel_start() {
+	if mongrel_status; then
+		ocf_log debug "Mongrel is already running"
+		return $OCF_SUCCESS
+	fi
+
+	ERRORS=`$MONGREL ${MONGREL_CLUSTER}start $MONGREL_OPTIONS 2>&1`
+	RETVAL=$?
+	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "Mongrel failed to start: $ERRORS"
+		return $OCF_ERR_GENERIC
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $MONGREL_pid_file || true
+	fi
+
+	return $OCF_SUCCESS
+}
+
+mongrel_stop() {
+	mongrel_status || return $OCF_SUCCESS
+
+	ERRORS=`$MONGREL ${MONGREL_CLUSTER}stop $MONGREL_OPTIONS 2>&1`
+	RETVAL=$?
+	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "Mongrel failed to stop: $ERRORS"
+		return $OCF_ERR_GENERIC
+	fi
+
+	return $OCF_SUCCESS
+}
+
+# What kind of method was invoked?
+case "$1" in
+  start)	mongrel_validate; mongrel_start;;
+  stop)		mongrel_stop;;
+  status)	mongrel_status;;
+  reload)	mongrel_reload;;
+  monitor)	mongrel_monitor;;
+  meta-data)	meta_data; exit $OCF_SUCCESS;;
+  validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
+  *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
+esac
+exit $?

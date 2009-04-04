@@ -1,0 +1,221 @@
+#!/bin/sh
+#
+# Description:	Manages a monit instance as an OCF High-Availability resource
+#								under Heartbeat/LinuxHA control.
+#
+# Author:	Joe Khoobyar
+#
+# License:	GNU General Public License (GPL)
+#
+# Copyright (c) 2009 All Rights Reserved
+#
+# See usage() function below for more details...
+#
+# OCF instance parameters:
+#   OCF_RESKEY_monit
+#   OCF_RESKEY_config
+#		OCF_RESKEY_pid
+#   OCF_RESKEY_pid_owner
+#   OCF_RESKEY_pid_group
+#   OCF_RESKEY_state
+#   OCF_RESKEY_log
+#   OCF_RESKEY_interval
+#		OCF_RESKEY_options
+#   OCF_RESKEY_renice
+
+#######################################################################
+# Initialization:
+
+. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
+. $(dirname $0)/.jk-shellfuncs
+
+#######################################################################
+
+: ${OCF_RESKEY_monit="/usr/sbin/monit"}
+: ${OCF_RESKEY_config="/etc/monitrc"}
+: ${OCF_RESKEY_pid="/var/run/monit.pid"}
+: ${OCF_RESKEY_state="/tmp/monit.state"}
+: ${OCF_RESKEY_log="/var/log/monit.log"}
+
+usage() {
+cat <<END
+
+usage: $0 (start|stop|status|reload|monitor|meta-data|validate-all)
+
+$0 manages Monit as an OCF resource.
+
+The 'start' operation starts Monit.
+The 'stop' operation stops Monit.
+The 'status' operation reports whether Monit is running.
+The 'reload' operation gracefully reloads Monit.
+The 'monitor' operation reports whether Monit seems to be working.
+The 'meta-data' operation reports the configuration options.
+The 'validate-all' operation reports whether the parameters are valid.
+
+END
+}
+
+meta_data() {
+cat <<END
+
+<?xml version="1.0" ?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="Monit">
+    <version>1.0</version>
+      <longdesc lang="en">This is an OCF resource agent for the Monit web server</longdesc>
+      <shortdesc lang="en">OCF resource agent for Monit</shortdesc>
+      <parameters>
+				<parameter name="monit" required="1" unique="0">
+					<longdesc lang="en">
+						Full path to the Monit executable.
+					</longdesc>
+					<shortdesc>Monit executable</shortdesc>
+					<content type="string" default="/usr/sbin/monit"/>
+				</parameter>
+				<parameter name="config" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the Monit configuration file for this instance.
+					</longdesc>
+					<shortdesc>Config file</shortdesc>
+					<content type="string" default="/etc/monitrc"/>
+				</parameter>
+				<parameter name="pid" required="1" unique="1">
+					<longdesc lang="en">
+						Full path to the PID file that this instance should use.
+					</longdesc>
+					<shortdesc>PID file</shortdesc>
+					<content type="string" default="/var/run/monit.pid"/>
+				</parameter>
+				<parameter name="pid_owner" required="0">
+					<longdesc lang="en">
+						User who should own the PID file.
+					</longdesc>
+					<shortdesc>PID file owner</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="pid_group" required="0">
+					<longdesc lang="en">
+						Group which should own the PID file.
+					</longdesc>
+					<shortdesc>PID file group</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="state" required="0">
+					<longdesc lang="en">
+						Full path to the Monit state file for this instance.
+					</longdesc>
+					<shortdesc>state file</shortdesc>
+					<content type="string" default="/tmp/monit.state"/>
+				</parameter>
+				<parameter name="log" required="0">
+					<longdesc lang="en">
+						Full path to the Monit log file for this instance.
+					</longdesc>
+					<shortdesc>log file</shortdesc>
+					<content type="string" default="/var/log/monit.log"/>
+				</parameter>
+				<parameter name="interval" required="0">
+					<longdesc lang="en">
+						Explicitly run Monit as a daemon, once every _interval_ seconds.
+					</longdesc>
+					<shortdesc>daemon interval</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="options" required="0">
+					<longdesc lang="en">
+						Any additional options to pass to the Monit command.
+					</longdesc>
+					<shortdesc>Extra options</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="renice" required="0">
+					<longdesc lang="en">
+						Optional value to pass to renice Monit with after starting it.
+					</longdesc>
+					<shortdesc>renice value</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+		</parameters>
+    <actions>
+      <action name="start" timeout="30" />
+      <action name="stop" timeout="30" />
+      <action name="status" timeout="20" />
+      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
+      <action name="meta-data" timeout="5" />
+      <action name="validate-all" timeout="5" />
+   </actions>
+</resource-agent>
+
+END
+}
+
+MONIT="$OCF_RESKEY_monit -c $OCF_RESKEY_config $OCF_RESKEY_options"
+[ -z "$OCF_RESKEY_interval" ] || MONIT="$MONIT $OCF_RESKEY_interval"
+
+monit_validate() {
+	jk_validate_executable "$OCF_RESKEY_monit"
+	jk_validate_config "$MONIT -t" "$OCF_RESKEY_config"
+	jk_validate_readable "$OCF_RESKEY_log" "$OCF_RESKEY_state"
+}
+
+monit_status() {
+	jk_resource_status_by_pid 'Monit'
+}
+
+monit_monitor() {
+	monit_status
+}
+
+monit_start() {
+	if monit_status; then
+		ocf_log debug "Monit is already running"
+		return $OCF_SUCCESS
+	fi
+
+	jk_pidfile_prepare && ERRORS=`$MONIT start 2>&1`
+	RETVAL=$?
+	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "Monit failed to start: $ERRORS"
+		return $OCF_ERR_GENERIC
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
+	fi
+
+	return $OCF_SUCCESS
+}
+
+monit_reload() {
+	jk_resource_signal_by_pid 'Monit', 'HUP'
+}
+
+monit_stop() {
+	monit_status || return $OCF_SUCCESS
+
+	ERRORS=`$MONIT quit 2>&1`
+	RETVAL=$?
+	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "Monit failed to start: $ERRORS"
+		return $OCF_ERR_GENERIC
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
+	fi
+
+	return $OCF_SUCCESS
+}
+
+# What kind of method was invoked?
+case "$1" in
+  start)	monit_validate; monit_start;;
+  stop)		monit_stop;;
+  status)	monit_status;;
+  reload)	monit_reload;;
+  monitor)	monit_monitor;;
+  meta-data)	meta_data; exit $OCF_SUCCESS;;
+  validate-all)	monit_validate; exit $OCF_SUCCESS;;
+  *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
+esac
+exit $?

@@ -22,7 +22,7 @@
 # Initialization:
 
 . ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
-. $(dirname $0)/.jk-shellfuncs
+. $(dirname $0)/jk-shellfuncs
 
 #######################################################################
 
@@ -191,28 +191,15 @@ mongrel_monitor() {
 }
 
 mongrel_start() {
-	local retval
-	if mongrel_status; then
-		ocf_log debug "Mongrel is already running"
-		return $OCF_SUCCESS
-	fi
-
-	ERRORS=`$MONGREL_start 2>&1`; retval=$?
-
-	if [ $retval -ne $OCF_SUCCESS ]; then
-		[ -z "$ERRORS" ] && ERRORS="error code $retval"
-		ocf_log err "Mongrel failed to start: $ERRORS"
-		return $OCF_ERR_GENERIC
-	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $MONGREL_pid_file || true
-	fi
-
+	jk_resource_exit_if_started_by_pid 'Mongrel' $MONGREL_pid_file
+	jk_resource_start_by_command 'Mongrel' "$MONGREL_start" "$MONGREL_pid_file"
 	jk_verify_start_by_pid 'Mongrel' $MONGREL_pid_file
 }
 
 mongrel_stop() {
 	local retval
-	mongrel_status || return $OCF_SUCCESS
+
+	jk_resource_exit_if_stopped_by_pid 'Mongrel' $MONGREL_pid_file
 
 	# Try really hard to kill this mongrel...
 	ERRORS=`$MONGREL_stop 2>&1`; retval=$?

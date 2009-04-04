@@ -26,7 +26,7 @@
 # Initialization:
 
 . ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
-. $(dirname $0)/.jk-shellfuncs
+. $(dirname $0)/jk-shellfuncs
 
 #######################################################################
 

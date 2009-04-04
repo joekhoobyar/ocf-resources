@@ -111,6 +111,33 @@ jk_resource_status_by_pid() {
 	return $OCF_NOT_RUNNING
 }
 
+jk_resource_exit_if_started_by_pid() {
+	if jk_resource_status_by_pid "$@"; then
+		ocf_log debug "$1 is already running"
+		exit $OCF_SUCCESS
+	fi
+}
+
+jk_resource_exit_if_stopped_by_pid() {
+	jk_resource_status_by_pid "$@" || return
+	ocf_log debug "$1 is stopped"
+}
+
+jk_resource_start_by_command() {
+	local retval message name=$1 command=$2 pidfile=$3
+	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	
+	message=`$command 2>&1`; retval=$?
+
+	if [ $retval -ne $OCF_SUCCESS ]; then
+		[ -z "$message" ] && mesage="error code $retval"
+		ocf_log err "$name failed to start: $message"
+		return $OCF_ERR_GENERIC
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $pidfile || true
+	fi
+}
+
 jk_verify_start_by_pid() {
 	local pidfile=$2
 	local waiting=$OCF_RESKEY_verify_start

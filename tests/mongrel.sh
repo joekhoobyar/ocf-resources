@@ -7,6 +7,7 @@
 # Copyright (c) 2009 All Rights Reserved
 #
 
+rm -rf /tmp/mongrel-test
 rails /tmp/mongrel-test -d sqlite3
 
 ocf-tester -n mongrel-test \

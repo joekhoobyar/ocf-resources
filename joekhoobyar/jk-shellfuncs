@@ -3,7 +3,7 @@ jk_validate_executable() {
 
 	while [ $# -gt 0 ]; do
 		command="${1%% *}"
-		if ! $WHICH $command || [ ! -x $command ]; then
+		if [ ! -x $command ] && ! which $command; then
 			ocf_log err "$command is either missing or not executable"
 			exit $OCF_ERR_INSTALLED
 		fi

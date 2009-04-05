@@ -11,7 +11,6 @@ mkdir -p /tmp/nginx-html &&
 	touch /tmp/nginx-html/index.html
 
 ocf-tester -n nginx-test \
-	-o nginx=$(which nginx) \
 	-o config=$(dirname $0)/config/nginx.conf \
 	-o pid=/tmp/nginx.pid \
 	-o log=/tmp/nginx.log \

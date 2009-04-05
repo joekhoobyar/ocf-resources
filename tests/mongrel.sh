@@ -13,7 +13,6 @@ rails /tmp/mongrel-test -d sqlite3 2>/dev/null >/dev/null
 cp $(dirname $0)/config/mongrel.yml /tmp/mongrel-test/config/mongrel.yml
 
 ocf-tester -n mongrel-test \
-	-o mongrel=$(which mongrel_rails) \
 	-o config=/tmp/mongrel-test/config/mongrel.yml \
 	-o monitor_url=http://localhost:8088/ \
 	$(dirname $0)/../joekhoobyar/Mongrel

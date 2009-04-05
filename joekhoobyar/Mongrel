@@ -142,20 +142,20 @@ mongrel_yml_to_vars() {
 		exit $OCF_ERR_ARGS
 	fi
 	if ! ocf_is_decimal "$MONGREL_port"; then
-		ocf_log err "Invalid port '$MONGREL_port' in $config"
+		ocf_log err "Invalid port setting '$MONGREL_port' in $config"
 		exit $OCF_ERR_ARGS
 	fi
-	if ! ocf_is_decimal "$OCF_RESKEY_only"; then
-		ocf_log err "Invalid resource parameter 'only $OCF_RESKEY_only'"
-		exit $OCF_ERR_ARGS
-	fi
-
 	# Validate cluster membership a bit up front.
 	if ! [ -z "$OCF_RESKEY_only" ]; then
 		if ! ocf_is_decimal "$MONGREL_servers" || [ $MONGREL_servers -le 0 ]; then
-			ocf_log err "Invalid servers '$MONGREL_servers' in $config"
+			ocf_log err "Invalid servers setting '$MONGREL_servers' in $config"
 			exit $OCF_ERR_ARGS
 		fi
+		if ! ocf_is_decimal "$OCF_RESKEY_only"; then
+			ocf_log err "Invalid resource parameter 'only $OCF_RESKEY_only'"
+			exit $OCF_ERR_ARGS
+		fi
+
 
 		let MONGREL_port_min=$MONGREL_port
 		let MONGREL_port_max=$((MONGREL_port + $MONGREL_servers - 1))
@@ -188,7 +188,7 @@ mongrel_validate() {
 	[ -z "$MONGREL_address" ] || jk_validate_ip "$MONGREL_address"
 	[ -z "$MONGREL_cwd" ] || jk_validate_directory "$MONGREL_cwd"
   if [ -z "$MONGREL_user" -a -n "$MONGREL_group" ] || [ -z "$MONGREL_group" -a -n "$MONGREL_user" ]; then
-		ocf_log err "You can't specify a user without a group or vice-versa."
+		ocf_log err "You can't specify a user without a group or vice-versa in $OCF_RESKEY_config"
 		exit $OCF_ERR_CONFIGURED
 	fi
 

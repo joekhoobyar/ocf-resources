@@ -116,7 +116,14 @@ END
 mongrel_yml_to_vars() {
 	local key value config="$1"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
-	[ -z "$config" ] && exit $OCF_ERR_ARGS
+	if [ -z "$config" ]; then
+		ocf_log err "The 'config' parameter is missing."
+		exit $OCF_ERR_ARGS
+	fi
+	if ! [ -r "$config" ]; then
+		ocf_log err "The configuration file $config is missing or unreadable."
+		exit $OCF_ERR_ARGS
+	fi
 
 	# Read all of the values from YML in a chap manner.
 	while IFS=" " read key value; do
@@ -130,14 +137,14 @@ mongrel_yml_to_vars() {
 	if ! [ -z "$OCF_RESKEY_only" ]; then
 
 		if [ -z "$MONGREL_port" ] || [ -z "$MONGREL_servers" ]; then
-			ocf_log err "Either port or the servers setting is invalid in $OCF_RESKEY_config"
+			ocf_log err "Either port or the servers setting is invalid in $config"
 			exit $OCF_ERR_ARGS
 		fi
 
 		let MONGREL_port_max=$((MONGREL_port + $MONGREL_servers - 1))
 
 		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port ]; then
-			ocf_log err "The 'only $OCF_RESKEY_only' parameter conflicts with the port and the servers setting(s) in $OCF_RESKEY_config"
+			ocf_log err "The 'only $OCF_RESKEY_only' parameter conflicts with the port and the servers setting(s) in $config"
 			exit $OCF_ERR_ARGS
 		fi
 
@@ -148,10 +155,10 @@ mongrel_yml_to_vars() {
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
 
 		# Differing commands for clustered vs. single mongrels.
-		MONGREL_start="$OCF_RESKEY_mongrel cluster::start -C $OCF_RESKEY_config --clean --only $MONGREL_port $OCF_RESKEY_options"
-		MONGREL_stop="$OCF_RESKEY_mongrel cluster::stop -C $OCF_RESKEY_config --clean --only $MONGREL_port $OCF_RESKEY_options"
+		MONGREL_start="$OCF_RESKEY_mongrel cluster::start -C $config --clean --only $MONGREL_port $OCF_RESKEY_options"
+		MONGREL_stop="$OCF_RESKEY_mongrel cluster::stop -C $config --clean --only $MONGREL_port $OCF_RESKEY_options"
 	else
-		MONGREL_start="$OCF_RESKEY_mongrel start -C $OCF_RESKEY_config -l $MONGREL_log_file -P $MONGREL_pid_file -c $MONGREL_cwd -r $MONGREL_docroot -d $OCF_RESKEY_options"
+		MONGREL_start="$OCF_RESKEY_mongrel start -C $config -l $MONGREL_log_file -P $MONGREL_pid_file -c $MONGREL_cwd -r $MONGREL_docroot -d $OCF_RESKEY_options"
 		MONGREL_stop="$OCF_RESKEY_mongrel stop -P $MONGREL_pid_file -c $MONGREL_cwd"
 	fi
 

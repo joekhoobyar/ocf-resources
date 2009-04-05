@@ -1,4 +1,6 @@
 --- 
+:user: nobody
+:group: nobody
 :log_file: /tmp/mongrel.log
 :port: "8088"
 :address: 127.0.0.1

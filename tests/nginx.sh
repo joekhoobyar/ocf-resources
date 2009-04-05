@@ -13,7 +13,6 @@ mkdir -p /tmp/nginx-html &&
 ocf-tester -n nginx-test \
 	-o config=$(dirname $0)/config/nginx.conf \
 	-o pid=/tmp/nginx.pid \
-	-o log=/tmp/nginx.log \
 	-o monitor_url=http://localhost:8088/ \
 	$(dirname $0)/../joekhoobyar/NGINX
 RETVAL=$?

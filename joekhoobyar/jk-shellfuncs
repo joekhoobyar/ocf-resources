@@ -1,65 +1,85 @@
-jk_validate_executable() {
+jk_check_executable() {
 	local command
 
 	while [ $# -gt 0 ]; do
 		command="${1%% *}"
 		if [ ! -x $command ] && ! which $command; then
 			ocf_log err "$command is either missing or not executable"
-			exit $OCF_ERR_INSTALLED
+			return $OCF_ERR_INSTALLED
 		fi
 		shift
 	done
 	return 0
 }
 
-jk_validate_readable() {
+jk_assert_executable() {
+	jk_check_executable "$@" || exit $?
+}
+
+jk_check_readable() {
 	while [ $# -gt 0 ]; do
 		if [ ! -r $1 ]; then
 			ocf_log err "$1 is either missing or unreadable"
-			exit $OCF_ERR_CONFIGURED
+			return $OCF_ERR_CONFIGURED
 		fi
 		shift
 	done
 	return 0
 }
 
-jk_validate_writable() {
+jk_assert_readable() {
+	jk_check_readable "$@" || exit $?
+}
+
+jk_check_writable() {
 	while [ $# -gt 0 ]; do
 		if [ ! -w $1 -a ! -w $(dirname $1) ]; then
 			ocf_log err "$1 or it's parent directory is unwritable, or the latter is missing"
-			exit $OCF_ERR_CONFIGURED
+			return $OCF_ERR_CONFIGURED
 		fi
 		shift
 	done
 	return 0
 }
 
-jk_validate_directory() {
+jk_assert_writable() {
+	jk_check_writable "$@" || exit $?
+}
+
+jk_check_directory() {
 	while [ $# -gt 0 ]; do
 		if [ ! -r $1 -o ! -d $1 -o ! -x $1 ]; then
 			ocf_log err "$1 is either missing or unreadable"
-			exit $OCF_ERR_CONFIGURED
+			return $OCF_ERR_CONFIGURED
 		fi
 		shift
 	done
 	return 0
 }
 
-jk_validate_config() {
+jk_assert_directory() {
+	jk_check_directory "$@" || exit $?
+}
+
+jk_check_config() {
 	local retval command="$1" config="$2"
 	[ -z "$config" ] && config="$OCF_RESKEY_config"
-	[ -z "$config" ] || jk_validate_readable "$config"
+	[ -z "$config" ] || jk_check_readable "$config" || return $?
 
 	ERRORS=`$command 2>&1`; retval=$?
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		ocf_log err "Invalid config file: $ERRORS";
-		exit $OCF_ERR_CONFIGURED
+		return $OCF_ERR_CONFIGURED
 	fi
 	return 0
 }
 
+jk_assert_config() {
+	jk_check_config "$@" || exit $?
+}
+
 # This idea was taken from Heartbeat's IPAddr2 resource script.
-jk_validate_ip() {
+jk_check_ip() {
 	$IP2UTIL -o -f inet addr show | grep "\ $1/" | cut -d ' ' -f2 | grep -v '^ipsec[0-9][0-9]*$' | fgrep "$1"
 }
 

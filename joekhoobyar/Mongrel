@@ -185,10 +185,11 @@ mongrel_yml_to_vars() {
 }
 
 mongrel_validate() {
-	[ -z "$MONGREL_log_file" ] || jk_validate_writable "$MONGREL_log_file"
-	[ -z "$MONGREL_pid_file" ] || jk_validate_writable "$MONGREL_pid_file"
-	[ -z "$MONGREL_address" ] || jk_validate_ip "$MONGREL_address"
-	[ -z "$MONGREL_cwd" ] || jk_validate_directory "$MONGREL_cwd"
+	[ $MONGREL_PRECHECK -gt 0 ] && exit $MONGREL_PRECHECK
+	[ -z "$MONGREL_log_file" ] || jk_assert_writable "$MONGREL_log_file"
+	[ -z "$MONGREL_pid_file" ] || jk_assert_writable "$MONGREL_pid_file"
+	[ -z "$MONGREL_address" ] || jk_check_ip "$MONGREL_address"
+	[ -z "$MONGREL_cwd" ] || jk_assert_directory "$MONGREL_cwd"
   if [ -z "$MONGREL_user" -a -n "$MONGREL_group" ] || [ -z "$MONGREL_group" -a -n "$MONGREL_user" ]; then
 		ocf_log err "You can't specify a user without a group or vice-versa in $OCF_RESKEY_config"
 		exit $OCF_ERR_CONFIGURED
@@ -245,16 +246,21 @@ if [ "$1" = "meta-data" ]; then
 fi
 
 # We always need these before we can do anything else...
-jk_validate_executable "$OCF_RESKEY_mongrel"
-jk_validate_readable "$OCF_RESKEY_config"
-mongrel_yml_to_vars
+jk_check_executable "$OCF_RESKEY_mongrel" &&
+	jk_check_readable "$OCF_RESKEY_config" &&
+	mongrel_yml_to_vars
+MONGREL_PRECHECK=$?
+
+mongrel_precheck() {
+	[ $MONGREL_PRECHECK -gt 2 ] && exit $OCF_ERR_GENERIC
+}
 
 # What kind of method was invoked?
 case "$1" in
   start)	mongrel_validate; mongrel_start;;
-  stop)		mongrel_stop;;
-  status)	mongrel_status;;
-  monitor)	mongrel_monitor;;
+  stop)		mongrel_check; mongrel_stop;;
+  status)	mongrel_check; mongrel_status;;
+  monitor)	mongrel_check; mongrel_monitor;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
   *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
 esac

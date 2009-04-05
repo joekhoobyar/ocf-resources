@@ -136,8 +136,8 @@ END
 NGINX="$OCF_RESKEY_nginx -c $OCF_RESKEY_config $OCF_RESKEY_options"
 
 nginx_validate() {
-	jk_validate_executable "$OCF_RESKEY_nginx"
-	jk_validate_config "$NGINX -t" "$OCF_RESKEY_config"
+	jk_assert_executable "$OCF_RESKEY_nginx"
+	jk_assert_config "$NGINX -t" "$OCF_RESKEY_config"
 }
 
 nginx_status() {

@@ -158,8 +158,8 @@ END
 HAPROXY="$OCF_RESKEY_haproxy -f $OCF_RESKEY_config $OCF_RESKEY_options"
 
 haproxy_validate() {
-	jk_validate_executable $OCF_RESKEY_haproxy
-	jk_validate_config "$HAPROXY -c" "$OCF_RESKEY_config"
+	jk_assert_executable $OCF_RESKEY_haproxy
+	jk_assert_config "$HAPROXY -c" "$OCF_RESKEY_config"
 }
 
 haproxy_status() {

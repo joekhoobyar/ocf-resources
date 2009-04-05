@@ -10,7 +10,6 @@
 ocf-tester -n haproxy-test \
 	-o config=$(dirname $0)/config/haproxy.conf \
 	-o pid=/tmp/haproxy.pid \
-	-o log=/tmp/haproxy.log \
 	-o monitor_url=http://localhost:3128/status \
 	$(dirname $0)/../joekhoobyar/HAProxy
 RETVAL=$?

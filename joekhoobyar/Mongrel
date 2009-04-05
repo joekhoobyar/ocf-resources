@@ -136,9 +136,13 @@ mongrel_yml_to_vars() {
 	done <"$config"
 
 	# Validate some parameters up front.
-	if ! [ -z "$MONGREL_servers" ] && [ -z "$OCF_RESKEY_only" ]; then
-		ocf_log err "The resource parameter 'only [PORT-NUMBER]' is required for mongrel clusters"
-		exit $OCF_ERR_ARGS
+	if ! [ -z "$MONGREL_servers" ]; then
+		: ${MONGREL_only=$OCF_RESKEY_only}
+		: ${MONGREL_only=$((MONGREL_port + OCF_RESKEY_CRM_meta_clone))}
+		if [ -z "$MONGREL_only" ]; then
+			ocf_log err "The resource parameter 'only [PORT-NUMBER]' is required for mongrel clusters"
+			exit $OCF_ERR_ARGS
+		fi
 	elif [ -z "$MONGREL_servers" ] && ! [ -z "$OCF_RESKEY_only" ]; then
 		ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
 		exit $OCF_ERR_ARGS
@@ -147,23 +151,23 @@ mongrel_yml_to_vars() {
 		ocf_log err "Invalid port setting '$MONGREL_port' in $config"
 		exit $OCF_ERR_ARGS
 	fi
+
 	# Validate cluster membership a bit up front.
-	if ! [ -z "$OCF_RESKEY_only" ]; then
+	if ! [ -z "$MONGREL_only" ]; then
 		if ! ocf_is_decimal "$MONGREL_servers" || [ $MONGREL_servers -le 0 ]; then
 			ocf_log err "Invalid servers setting '$MONGREL_servers' in $config"
 			exit $OCF_ERR_ARGS
 		fi
-		if ! ocf_is_decimal "$OCF_RESKEY_only"; then
-			ocf_log err "Invalid resource parameter 'only $OCF_RESKEY_only'"
+		if ! ocf_is_decimal "$MONGREL_only"; then
+			ocf_log err "Invalid resource parameter 'only $MONGREL_only'"
 			exit $OCF_ERR_ARGS
 		fi
 
-
 		let MONGREL_port_min=$MONGREL_port
 		let MONGREL_port_max=$((MONGREL_port + $MONGREL_servers - 1))
-		let MONGREL_port=$OCF_RESKEY_only
+		let MONGREL_port=$MONGREL_only
 
-		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port_min ]; then
+		if [ $MONGREL_only -gt $MONGREL_port_max ] || [ $MONGREL_only -lt $MONGREL_port_min ]; then
 			ocf_log err "The resource parameter 'only [PORT-NUMBER]' must be in the range: $MONGREL_port_min - $MONGREL_port_max"
 			exit $OCF_ERR_ARGS
 		fi

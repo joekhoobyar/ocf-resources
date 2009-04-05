@@ -164,7 +164,7 @@ mongrel_yml_to_vars() {
 		let MONGREL_port=$OCF_RESKEY_only
 
 		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port_min ]; then
-			ocf_log err "The resource parameter 'only [PORT-NUMBER]' be in the range: $MONGREL_port_min - $MONGREL_port_max"
+			ocf_log err "The resource parameter 'only [PORT-NUMBER]' must be in the range: $MONGREL_port_min - $MONGREL_port_max"
 			exit $OCF_ERR_ARGS
 		fi
 

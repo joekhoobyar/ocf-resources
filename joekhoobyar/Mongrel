@@ -103,8 +103,8 @@ cat <<END
 				</parameter>
 		</parameters>
     <actions>
-      <action name="start" timeout="30" />
-      <action name="stop" timeout="30" />
+      <action name="start" timeout="120" />
+      <action name="stop" timeout="120" />
       <action name="status" timeout="20" />
       <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
       <action name="meta-data" timeout="5" />

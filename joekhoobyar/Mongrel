@@ -137,16 +137,16 @@ mongrel_yml_to_vars() {
 
 	# Validate some parameters up front.
 	if ! [ -z "$MONGREL_servers" ]; then
-		: ${MONGREL_only=$OCF_RESKEY_only}
-		: ${MONGREL_only=$((MONGREL_port + OCF_RESKEY_CRM_meta_clone))}
+		MONGREL_only=$OCF_RESKEY_only
+		[ -z "$MONGREL_only" ] && MONGREL_only=$((MONGREL_port + OCF_RESKEY_CRM_meta_clone))
 		if [ -z "$MONGREL_only" ]; then
 			ocf_log err "The resource parameter 'only [PORT-NUMBER]' is required for mongrel clusters"
 			exit $OCF_ERR_ARGS
 		fi
 	elif [ -z "$MONGREL_servers" ]; then
-		: ${MONGREL_servers=$OCF_RESKEY_servers}
-		: ${MONGREL_servers=$((OCF_RESKEY_CRM_meta_clone_max))}
-		if [ -z "$MONGREL_servers" ] && ! [ -z "$OCF_RESKEY_only" ]; then
+		MONGREL_only=$OCF_RESKEY_only
+		MONGREL_servers=$((OCF_RESKEY_CRM_meta_clone_max))
+		if [ -z "$MONGREL_servers" ] && ! [ -z "$MONGREL_only" ]; then
 			ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
 			exit $OCF_ERR_ARGS
 		fi
@@ -266,9 +266,9 @@ mongrel_precheck() {
 # What kind of method was invoked?
 case "$1" in
   start)	mongrel_validate; mongrel_start;;
-  stop)		mongrel_check; mongrel_stop;;
-  status)	mongrel_check; mongrel_status;;
-  monitor)	mongrel_check; mongrel_monitor;;
+  stop)		mongrel_precheck; mongrel_stop;;
+  status)	mongrel_precheck; mongrel_status;;
+  monitor)	mongrel_precheck; mongrel_monitor;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
   *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
 esac

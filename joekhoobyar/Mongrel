@@ -143,9 +143,13 @@ mongrel_yml_to_vars() {
 			ocf_log err "The resource parameter 'only [PORT-NUMBER]' is required for mongrel clusters"
 			exit $OCF_ERR_ARGS
 		fi
-	elif [ -z "$MONGREL_servers" ] && ! [ -z "$OCF_RESKEY_only" ]; then
-		ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
-		exit $OCF_ERR_ARGS
+	elif [ -z "$MONGREL_servers" ]; then
+		: ${MONGREL_servers=$OCF_RESKEY_servers}
+		: ${MONGREL_servers=$((OCF_RESKEY_CRM_meta_clone_max))}
+		if [ -z "$MONGREL_servers" ] && ! [ -z "$OCF_RESKEY_only" ]; then
+			ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
+			exit $OCF_ERR_ARGS
+		fi
 	fi
 	if ! ocf_is_decimal "$MONGREL_port"; then
 		ocf_log err "Invalid port setting '$MONGREL_port' in $config"

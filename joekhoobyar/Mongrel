@@ -133,24 +133,40 @@ mongrel_yml_to_vars() {
 		[ -z "$value" ] || eval "export MONGREL_${key}=${value}"
 	done <"$config"
 
+	# Validate some parameters up front.
+	if ! [ -z "$MONGREL_servers" ] && [ -z "$OCF_RESKEY_only" ]; then
+		ocf_log err "The resource parameter 'only [PORT-NUMBER]' is required for mongrel clusters"
+		exit $OCF_ERR_ARGS
+	elif [ -z "$MONGREL_servers" ] && ! [ -z "$OCF_RESKEY_only" ]; then
+		ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
+		exit $OCF_ERR_ARGS
+	fi
+	if ! ocf_is_decimal "$MONGREL_port"; then
+		ocf_log err "Invalid port '$MONGREL_port' in $config"
+		exit $OCF_ERR_ARGS
+	fi
+	if ! ocf_is_decimal "$OCF_RESKEY_only"; then
+		ocf_log err "Invalid resource parameter 'only $OCF_RESKEY_only'"
+		exit $OCF_ERR_ARGS
+	fi
+
 	# Validate cluster membership a bit up front.
 	if ! [ -z "$OCF_RESKEY_only" ]; then
-
-		if [ -z "$MONGREL_port" ] || [ -z "$MONGREL_servers" ]; then
-			ocf_log err "Either port or the servers setting is invalid in $config"
+		if ! ocf_is_decimal "$MONGREL_servers" || [ $MONGREL_servers -le 0 ]; then
+			ocf_log err "Invalid servers '$MONGREL_servers' in $config"
 			exit $OCF_ERR_ARGS
 		fi
 
+		let MONGREL_port_min=$MONGREL_port
 		let MONGREL_port_max=$((MONGREL_port + $MONGREL_servers - 1))
+		let MONGREL_port=$OCF_RESKEY_only
 
-		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port ]; then
-			ocf_log err "The 'only $OCF_RESKEY_only' parameter conflicts with the port and the servers setting(s) in $config"
+		if [ $OCF_RESKEY_only -gt $MONGREL_port_max ] || [ $OCF_RESKEY_only -lt $MONGREL_port_min ]; then
+			ocf_log err "The resource parameter 'only [PORT-NUMBER]' be in the range: $MONGREL_port_min - $MONGREL_port_max"
 			exit $OCF_ERR_ARGS
 		fi
 
 		# Create the "real" port, log_file, pid_file settings from the cluster settings.
-		let MONGREL_port_min=$MONGREL_port
-		let MONGREL_port=$OCF_RESKEY_only
 		MONGREL_log_file=${MONGREL_log_file%.*}.${MONGREL_port}.${MONGREL_log_file##*.}
 		MONGREL_pid_file=${MONGREL_pid_file%.*}.${MONGREL_port}.${MONGREL_pid_file##*.}
 
@@ -171,9 +187,6 @@ mongrel_validate() {
 	[ -z "$MONGREL_pid_file" ] || jk_validate_writable "$MONGREL_pid_file"
 	[ -z "$MONGREL_address" ] || jk_validate_ip "$MONGREL_address"
 	[ -z "$MONGREL_cwd" ] || jk_validate_directory "$MONGREL_cwd"
-	if [ -z "$MONGREL_port" ] || ! ocf_is_decimal "$MONGREL_port"; then
-		exit $OCF_ERR_CONFIGURED
-	fi
   if [ -z "$MONGREL_user" -a -n "$MONGREL_group" ] || [ -z "$MONGREL_group" -a -n "$MONGREL_user" ]; then
 		ocf_log err "You can't specify a user without a group or vice-versa."
 		exit $OCF_ERR_CONFIGURED

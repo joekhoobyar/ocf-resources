@@ -27,7 +27,7 @@
 
 #######################################################################
 
-NGINX_which=$(which nginx)
+NGINX_which=$(which nginx 2>/dev/null)
 : ${NGINX_which=/usr/sbin/nginx}
 : ${OCF_RESKEY_nginx=$NGINX_which}
 : ${OCF_RESKEY_config="/etc/nginx/nginx.conf"}

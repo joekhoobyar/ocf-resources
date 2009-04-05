@@ -26,7 +26,7 @@
 
 #######################################################################
 
-MONGREL_which=$(which mongrel_rails)
+MONGREL_which=$(which mongrel_rails 2>/dev/null)
 : ${MONGREL_which=/usr/bin/mongrel_rails}
 : ${OCF_RESKEY_mongrel=$MONGREL_which}
 : ${OCF_RESKEY_verify_start=1}

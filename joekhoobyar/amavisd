@@ -27,7 +27,7 @@
 
 #######################################################################
 
-AMAVISD_which=$(which amavisd)
+AMAVISD_which=$(which amavisd 2>/dev/null)
 : ${AMAVISD_which=/usr/bin/amavisd}
 : ${OCF_RESKEY_amavisd=$AMAVISD_which}
 : ${OCF_RESKEY_config="/etc/amavisd.conf"}

@@ -31,7 +31,7 @@
 #######################################################################
 
 # Fill in some defaults if no values are specified
-HAPROXY_which=$(which haproxy)
+HAPROXY_which=$(which haproxy 2>/dev/null)
 : ${HAPROXY_which=/usr/sbin/haproxy}
 : ${OCF_RESKEY_haproxy=$HAPROXY_which}
 : ${OCF_RESKEY_config="/etc/haproxy/haproxy.conf"}

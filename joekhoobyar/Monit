@@ -30,7 +30,7 @@
 
 #######################################################################
 
-MONIT_which=$(which monit)
+MONIT_which=$(which monit 2>/dev/null)
 : ${MONIT_which=/usr/bin/monit}
 : ${OCF_RESKEY_monit=$MONIT_which}
 : ${OCF_RESKEY_config="/etc/monitrc"}

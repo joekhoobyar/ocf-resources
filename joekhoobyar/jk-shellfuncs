@@ -119,14 +119,13 @@ jk_resource_status_by_pid() {
 }
 
 jk_resource_exit_if_started_by_pid() {
-	if jk_resource_monitor_by_pid "$@"; then
-		ocf_log debug "$1 is already running"
-		exit $OCF_SUCCESS
-	fi
+	jk_resource_monitor_by_pid "$@" || return $OCF_ERR_GENERIC
+	ocf_log debug "$1 is already running"
+	exit $OCF_SUCCESS
 }
 
 jk_resource_exit_if_stopped_by_pid() {
-	jk_resource_monitor_by_pid "$@" || return
+	jk_resource_monitor_by_pid "$@" && return $OCF_ERR_GENERIC
 	ocf_log debug "$1 is stopped"
 	exit $OCF_SUCCESS
 }

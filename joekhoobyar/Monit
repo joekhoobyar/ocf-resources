@@ -30,7 +30,9 @@
 
 #######################################################################
 
-: ${OCF_RESKEY_monit="/usr/sbin/monit"}
+MONIT_which=$(which monit)
+: ${MONIT_which=/usr/bin/monit}
+: ${OCF_RESKEY_monit=$MONIT_which}
 : ${OCF_RESKEY_config="/etc/monitrc"}
 : ${OCF_RESKEY_pid="/var/run/monit.pid"}
 : ${OCF_RESKEY_state="/tmp/monit.state"}
@@ -68,7 +70,7 @@ cat <<END
 						Full path to the Monit executable.
 					</longdesc>
 					<shortdesc>Monit executable</shortdesc>
-					<content type="string" default="/usr/sbin/monit"/>
+					<content type="string" default="$MONIT_which"/>
 				</parameter>
 				<parameter name="config" required="1" unique="1">
 					<longdesc lang="en">

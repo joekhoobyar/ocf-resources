@@ -27,7 +27,9 @@
 
 #######################################################################
 
-: ${OCF_RESKEY_amavisd="/usr/sbin/amavisd"}
+AMAVISD_which=$(which amavisd)
+: ${AMAVISD_which=/usr/bin/amavisd}
+: ${OCF_RESKEY_amavisd=$AMAVISD_which}
 : ${OCF_RESKEY_config="/etc/amavisd.conf"}
 : ${OCF_RESKEY_pid="/var/run/amavis/amavisd.pid"}
 : ${OCF_RESKEY_home="/var/amavis"}
@@ -66,7 +68,7 @@ cat <<END
 						Full path to the Amavisd executable.
 					</longdesc>
 					<shortdesc>Amavisd executable</shortdesc>
-					<content type="string" default="/usr/sbin/amavisd"/>
+					<content type="string" default="$AMAVISD_which"/>
 				</parameter>
 				<parameter name="config" required="1" unique="1">
 					<longdesc lang="en">

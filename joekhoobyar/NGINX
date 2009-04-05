@@ -27,7 +27,9 @@
 
 #######################################################################
 
-: ${OCF_RESKEY_nginx="/usr/sbin/nginx"}
+NGINX_which=$(which nginx)
+: ${NGINX_which=/usr/sbin/nginx}
+: ${OCF_RESKEY_nginx=$NGINX_which}
 : ${OCF_RESKEY_config="/etc/nginx/nginx.conf"}
 : ${OCF_RESKEY_pid="/var/run/nginx.pid"}
 : ${OCF_RESKEY_pid_owner="nobody"}
@@ -65,7 +67,7 @@ cat <<END
 						Full path to the NGINX executable.
 					</longdesc>
 					<shortdesc>NGINX executable</shortdesc>
-					<content type="string" default="/usr/sbin/nginx"/>
+					<content type="string" default="$NGINX_which"/>
 				</parameter>
 				<parameter name="config" required="1" unique="1">
 					<longdesc lang="en">

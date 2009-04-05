@@ -1,7 +1,10 @@
 jk_validate_executable() {
+	local command
+
 	while [ $# -gt 0 ]; do
-		if [ ! -r $1 ]; then
-			ocf_log err "$1 is either missing or not executable"
+		command="${1%% *}"
+		if ! $WHICH $command || [ ! -x $command ]; then
+			ocf_log err "$command is either missing or not executable"
 			exit $OCF_ERR_INSTALLED
 		fi
 		shift

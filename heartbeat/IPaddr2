@@ -9,7 +9,7 @@
 #
 #	Cluster Alias IP cleanup, fixes and testing by Michael Schwartzkopff
 #
-#	Joe Khoobyar made unique_clone_address turn off cluster IP mode,
+# Joe Khoobyar made unique_clone_address turn off cluster IP mode,
 # because they're not particularly useful together in this implementation.
 #
 #

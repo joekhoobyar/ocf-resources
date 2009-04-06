@@ -16,7 +16,17 @@ all: check
 joek-resources: $(addprefix joekhoobyar/, $(JOEK_RESOURCES))
 	mkdir -p gen
 	for i in $(JOEK_FUNCS); do cp joekhoobyar/$$i gen/.$$i; done
-	for i in $(JOEK_SCRIPTS); do sed -e 's@\$$(dirname \$$0)/@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.@g' <joekhoobyar/$$i >>gen/$$i; done
+	for i in $(JOEK_SCRIPTS); do \
+		DETECTED_COMMAND=$$(sed -ne 's@^: $${\([^=]\+\)_which=\([^}]\+\)}@:\2@p' <joekhoobyar/$$i \
+		                     | xargs basename 2>/dev/null | xargs which 2>/dev/null); \
+		if [ -z "$$DETECTED_COMMAND" ]; then \
+			sed -e 's@\$$(dirname \$$0)/@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.@g;' <joekhoobyar/$$i >>gen/$$i; \
+		else \
+			sed -e 's@\$$(dirname \$$0)/@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.@g;' \
+				-e 's@^: $${\([^=]\+\)_which=\([^}]\+\)}@: $${\1_which='"$$DETECTED_COMMAND"'}\n: $${\1_which=\2}@g' \
+				<joekhoobyar/$$i >>gen/$$i; \
+		fi; \
+	done
 
 install: install-all
 

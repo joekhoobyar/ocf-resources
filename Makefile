@@ -34,7 +34,7 @@ install-joek-funcs: $(addprefix gen/., $(JOEK_FUNCS))
 	install -m 644 -o root -g root $^ $(JOEK_DIR)
 
 install-heartbeat-resources: $(RESOURCE_DIR)/heartbeat
-	cp -dup heartbeat/* $(RESOURCE_DIR)/heartbeat
+	install -m 755 -o root -g root heartbeat/* $(JOEK_DIR)
 
 clean:
 	rm -rf gen

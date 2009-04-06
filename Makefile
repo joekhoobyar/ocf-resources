@@ -45,6 +45,8 @@ install-joek-funcs: $(addprefix gen/., $(JOEK_FUNCS))
 
 install-heartbeat-resources: $(RESOURCE_DIR)/heartbeat
 	install -m 755 -o root -g root heartbeat/* $(JOEK_DIR)
+	mv $(JOEK_DIR)/README $(JOEK_DIR)/README.heartbeat-ocf-ra
+	chmod 644 $(JOEK_DIR)/README.heartbeat-ocf-ra
 
 clean:
 	rm -rf gen

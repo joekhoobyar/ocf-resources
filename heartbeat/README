@@ -1,0 +1,6 @@
+The resource agent scripts in the heartbeat/ source directory originated from the
+Linux-HA project, available at http://www.linux-ha.org .  Local changes to the
+scripts prohibit their installation into the "heartbeat" OCF provider subdir -
+so they get installed to the "joekhoobyar" OCF provider subdir just like the
+scripts in the joekhoobyar/ source directory.
+

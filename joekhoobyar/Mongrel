@@ -22,7 +22,7 @@
 # Initialization:
 
 . ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
-. $(dirname $0)/jk-shellfuncs
+. $(dirname $0)/joekhoobyar/jk-shellfuncs
 
 #######################################################################
 
@@ -103,12 +103,12 @@ cat <<END
 				</parameter>
 		</parameters>
     <actions>
-      <action name="start" timeout="120" />
-      <action name="stop" timeout="120" />
-      <action name="status" timeout="20" />
-      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
-      <action name="meta-data" timeout="5" />
-      <action name="validate-all" timeout="5" />
+      <action name="start" timeout="120s" />
+      <action name="stop" timeout="120s" />
+      <action name="status" timeout="20s" />
+      <action name="monitor" depth="0" start-delay="10s" interval="120s" timeout="30s" />
+      <action name="meta-data" timeout="5s" />
+      <action name="validate-all" timeout="5s" />
    </actions>
 </resource-agent>
 
@@ -145,7 +145,7 @@ mongrel_yml_to_vars() {
 		fi
 	elif [ -z "$MONGREL_servers" ]; then
 		MONGREL_only=$OCF_RESKEY_only
-		MONGREL_servers=$((OCF_RESKEY_CRM_meta_clone_max))
+		MONGREL_servers=$OCF_RESKEY_CRM_meta_clone_max
 		if [ -z "$MONGREL_servers" ] && ! [ -z "$MONGREL_only" ]; then
 			ocf_log err "The 'only [PORT-NUMBER]' resource parameter can only be used with mongrel clusters"
 			exit $OCF_ERR_ARGS
@@ -190,6 +190,8 @@ mongrel_yml_to_vars() {
 
 	MONGREL_force_stop="$OCF_RESKEY_mongrel stop -P $MONGREL_pid_file -c $MONGREL_cwd -w 45 -f"
 	MONGREL_kill="( cat $MONGREL_pid_file | xargs kill -9 ) && rm -f $MONGREL_pid_file"
+
+	return 0
 }
 
 mongrel_validate() {
@@ -236,8 +238,7 @@ mongrel_stop() {
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		ERRORS="$ERRORS -- `$MONGREL_force_stop 2>&1`"; retval=$?
 		if [ $retval -ne $OCF_SUCCESS ]; then
-			ERRORS="$ERRORS -- `$MONGREL_kill 2>&`"; retval $?
-			[ $retval -eq 0 ] && return 0
+			ERRORS="$ERRORS -- `$MONGREL_kill 2>&1`"; retval $?
 		fi
 	fi
 
@@ -246,6 +247,8 @@ mongrel_stop() {
 		ocf_log err "Mongrel failed to stop: $ERRORS"
 		return $OCF_ERR_GENERIC
 	fi
+
+	return $OCF_SUCCESS
 }
 
 # Do this first, in case some settings are bad.

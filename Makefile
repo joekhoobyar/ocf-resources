@@ -23,7 +23,7 @@ joek-resources: $(addprefix joekhoobyar/, $(JOEK_RESOURCES))
 			sed -e 's@\$$(dirname \$$0)/@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.@g;' <joekhoobyar/$$i >>gen/$$i; \
 		else \
 			sed -e 's@\$$(dirname \$$0)/@$${OCF_ROOT:-/usr/lib/ocf}/resource.d/joekhoobyar/.@g;' \
-				-e 's@^: $${\([^=]\+\)_which=\([^}]\+\)}@[ -z "$$\1_which" ] \&\& $$\1_which="'"$$DETECTED_COMMAND"'"\n[ -z "$$\1_which" ] \&\& $$\1_which="\2"@g' \
+				-e 's@^: $${\([^=]\+\)_which=\([^}]\+\)}@[ -z "$$\1_which" ] \&\& \1_which="'"$$DETECTED_COMMAND"'"\n[ -z "$$\1_which" ] \&\& \1_which="\2"@g' \
 				<joekhoobyar/$$i >>gen/$$i; \
 		fi; \
 	done

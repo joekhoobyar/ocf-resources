@@ -9,6 +9,9 @@
 #
 #	Cluster Alias IP cleanup, fixes and testing by Michael Schwartzkopff
 #
+#	Joe Khoobyar made unique_clone_address turn off cluster IP mode,
+# because they're not particularly useful together in this implementation.
+#
 #
 # Copyright (c) 2003 Tuomo Soini
 # Copyright (c) 2004-2006 SUSE LINUX AG, Lars Marowsky-Brée
@@ -330,7 +333,7 @@ ip_init() {
 
 	IP_CIP=
 	
-	if [ "$IP_INC_GLOBAL" -gt 1 ]; then
+	if [ "$IP_INC_GLOBAL" -gt 1 ] && [ -z "$OCF_RESKEY_unique_clone_address" ]; then
 		IP_CIP="yes"
 		if [ -z "$IF_MAC" ]; then
 			# Choose a MAC

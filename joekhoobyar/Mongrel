@@ -263,7 +263,7 @@ jk_check_executable "$OCF_RESKEY_mongrel" &&
 MONGREL_PRECHECK=$?
 
 mongrel_precheck() {
-	[ $MONGREL_PRECHECK -gt 2 ] && exit $OCF_ERR_GENERIC
+	[ $MONGREL_PRECHECK -gt 2 ] && exit ${1:-$OCF_ERR_GENERIC}
 }
 
 # What kind of method was invoked?
@@ -271,7 +271,7 @@ case "$1" in
   start)	mongrel_validate; mongrel_start;;
   stop)		mongrel_precheck; mongrel_stop;;
   status)	mongrel_precheck; mongrel_status;;
-  monitor)	mongrel_precheck; mongrel_monitor;;
+  monitor)	mongrel_precheck $OCF_NOT_RUNNING; mongrel_monitor;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
   *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
 esac

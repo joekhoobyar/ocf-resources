@@ -65,21 +65,21 @@ cat <<END
       <longdesc lang="en">This is an OCF resource agent for the Monit web server</longdesc>
       <shortdesc lang="en">OCF resource agent for Monit</shortdesc>
       <parameters>
-				<parameter name="monit" required="1" unique="0">
+				<parameter name="monit" required="1">
 					<longdesc lang="en">
 						Full path to the Monit executable.
 					</longdesc>
 					<shortdesc>Monit executable</shortdesc>
 					<content type="string" default="$MONIT_which"/>
 				</parameter>
-				<parameter name="config" required="1" unique="1">
+				<parameter name="config" required="1" unique="0">
 					<longdesc lang="en">
 						Full path to the Monit configuration file for this instance.
 					</longdesc>
 					<shortdesc>Config file</shortdesc>
 					<content type="string" default="/etc/monitrc"/>
 				</parameter>
-				<parameter name="pid" required="1" unique="1">
+				<parameter name="pid" required="1">
 					<longdesc lang="en">
 						Full path to the PID file that this instance should use.
 					</longdesc>
@@ -100,7 +100,7 @@ cat <<END
 					<shortdesc>PID file group</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
-				<parameter name="state" required="0">
+				<parameter name="state" required="0" unique="0">
 					<longdesc lang="en">
 						Full path to the Monit state file for this instance.
 					</longdesc>
@@ -140,6 +140,7 @@ cat <<END
       <action name="start" timeout="30" />
       <action name="stop" timeout="30" />
       <action name="status" timeout="20" />
+      <action name="reload" timeout="20" />
       <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
       <action name="meta-data" timeout="5" />
       <action name="validate-all" timeout="5" />

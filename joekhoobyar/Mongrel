@@ -81,10 +81,23 @@ cat <<END
 				</parameter>
 				<parameter name="monitor_url" required="0">
 					<longdesc lang="en">
-						Optional URL to use for monitoring Mongrel with wget when the
-						OCF_CHECK_LEVEL is 10 or above.
+						Optional URL to use for monitoring with wget (OCF_CHECK_LEVEL 10 or above).
 					</longdesc>
 					<shortdesc>URL to monitor</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="monitor_mem" required="0">
+					<longdesc lang="en">
+						Optional maximum amount of resident memory (OCF_CHECK_LEVEL 10 or above).
+					</longdesc>
+					<shortdesc>Maximum RSS</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="monitor_mem_soft" required="0">
+					<longdesc lang="en">
+						Optional "soft" maximum amount of resident memory (OCF_CHECK_LEVEL 20 or above).
+					</longdesc>
+					<shortdesc>Soft maximum RSS</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
 				<parameter name="options" required="0">
@@ -213,13 +226,17 @@ mongrel_status() {
 }
 
 mongrel_monitor() {
-	local retval
+	local retval, maxmem, rssmem
+	
 	jk_resource_monitor_by_pid 'Mongrel' "$MONGREL_pid_file"; retval=$?
-	if [ $retval -eq 0 -a $OCF_CHECK_LEVEL -ge 10 ]; then
-		jk_monitor_url
-	else
-		return $retval
+	[ $retval -ne 0 ] && return $retval
+
+	if [ $OCF_CHECK_LEVEL -ge 10 ]; then
+		jk_monitor_url || return $OCF_ERR_GENERIC
+		jk_monitor_mem_by_pid || return $OCF_ERR_GENERIC
 	fi
+
+	return $OCF_SUCCESS
 }
 
 mongrel_start() {

@@ -296,7 +296,7 @@ case "$1" in
   start)	mongrel_validate; mongrel_start;;
   stop)		mongrel_precheck; mongrel_stop;;
   status)	mongrel_precheck; mongrel_status;;
-  reload)	mongrel_validate; exit $OCF_SUCCESS;
+  reload)	mongrel_validate; exit $OCF_SUCCESS;;
   monitor)	mongrel_precheck $OCF_NOT_RUNNING; mongrel_monitor;;
   validate-all)	mongrel_validate; exit $OCF_SUCCESS;;
   *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;

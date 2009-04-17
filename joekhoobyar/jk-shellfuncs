@@ -157,7 +157,7 @@ jk_resource_start_by_command() {
 	local retval message name="$1" command="$2" pidfile="$3"
 	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 	
-	message=`$command 2>&1`; retval=$?
+	message=$($command 2>&1); retval=$?
 
 	if [ $retval -ne $OCF_SUCCESS ]; then
 		[ -z "$message" ] && mesage="error code $retval"
@@ -245,7 +245,7 @@ jk_monitor_mem_by_pid() {
 	local retval rssmem maxmem="$1"
 	[ -n "$pid" ] || jk_pidfile_status "${2:-$OCF_RESKEY_pid}" || return $OCF_ERR_GENERIC
 	
-	if [ -n "$maxmem" ]; then
+	if [ -z "$maxmem" ]; then
 		if [ $OCF_CHECK_LEVEL -ge 20 ]; then
 			maxmem="${OCF_RESKEY_monitor_mem_soft:-$OCF_RESKEY_monitor_mem}"
 		else

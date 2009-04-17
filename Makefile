@@ -35,7 +35,7 @@ install-all: install-joek-resources install-heartbeat-resources
 install-joek-resources: joek-resources $(JOEK_DIR) install-joek-scripts install-joek-funcs
 
 $(JOEK_DIR): $(RESOURCE_DIR)
-	mkdir $(JOEK_DIR)
+	mkdir -p $(JOEK_DIR)
 
 install-joek-scripts: $(addprefix gen/, $(JOEK_SCRIPTS))
 	install -m 755 -o root -g root $^ $(JOEK_DIR)

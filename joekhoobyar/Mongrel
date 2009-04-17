@@ -226,13 +226,19 @@ mongrel_status() {
 }
 
 mongrel_monitor() {
-	local retval
+	local retval url="$OCF_RESKEY_monitor_url"
 	
 	jk_resource_monitor_by_pid 'Mongrel' "$MONGREL_pid_file"; retval=$?
 	[ $retval -ne 0 ] && return $retval
 
 	if [ $OCF_CHECK_LEVEL -ge 10 ]; then
-		jk_monitor_url || return $OCF_ERR_GENERIC
+		if [ -n "$url" ]; then
+			if [ "${url:0:7}" -ne "http://" ] && [ "${url:0:8}" -ne "https://" ]; then
+				url="http://$MONGREL_address:$MONGREL_port$OCF_RESKEY_monitor_url"
+			fi
+			jk_monitor_url "$url" || return $OCF_ERR_GENERIC
+		fi
+
 		jk_monitor_mem_by_pid || return $OCF_ERR_GENERIC
 	fi
 

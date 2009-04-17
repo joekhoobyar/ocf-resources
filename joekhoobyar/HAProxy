@@ -117,7 +117,7 @@ cat <<END
 					<shortdesc>renice value</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
-				<parameter name="monitor_url" required="0" unique="false">
+				<parameter name="monitor_url" required="0" unique="0">
 					<longdesc lang="en">
 						Optional URL to use for monitoring HAProxy with wget when the
 						OCF_CHECK_LEVEL is 10 or above.
@@ -125,7 +125,7 @@ cat <<END
 					<shortdesc>URL to monitor</shortdesc>
 					<content type="string" default=""/>
 				</parameter>
-				<parameter name="verify_start" required="0" unique="false">
+				<parameter name="verify_start" required="0" unique="0">
 					<longdesc lang="en">
 						Set this to force this resource agent to wait until it has verified
 						that the HAProxy instance has actually started up.
@@ -133,7 +133,7 @@ cat <<END
 					<shortdesc>verify start</shortdesc>
 					<content type="boolean" default="0"/>
 				</parameter>
-				<parameter name="verify_stop" required="0" unique="false">
+				<parameter name="verify_stop" required="0" unique="0">
 					<longdesc lang="en">
 						Set this to force this resource agent to wait until it has verified
 						that the HAProxy instance has actually stopped running.

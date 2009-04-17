@@ -226,7 +226,7 @@ mongrel_status() {
 }
 
 mongrel_monitor() {
-	local retval, maxmem, rssmem
+	local retval
 	
 	jk_resource_monitor_by_pid 'Mongrel' "$MONGREL_pid_file"; retval=$?
 	[ $retval -ne 0 ] && return $retval

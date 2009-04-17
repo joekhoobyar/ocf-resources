@@ -240,3 +240,24 @@ jk_monitor_url() {
 	fi
 	return $OCF_SUCCESS
 }
+
+jk_monitor_mem_by_pid() {
+	local retval rssmem maxmem="$1"
+	[ -n "$pid" ] || jk_pidfile_status "${2:-$OCF_RESKEY_pid}" || return $OCF_ERR_GENERIC
+	
+	if [ -n "$maxmem" ]; then
+		if [ $OCF_CHECK_LEVEL -ge 20 ]; then
+			maxmem="${OCF_RESKEY_monitor_mem_soft:-$OCF_RESKEY_monitor_mem}"
+		else
+			maxmem="$OCF_RESKEY_monitor_mem"
+		fi
+	fi
+	
+	if [ -n "$maxmem" ]; then
+		rssmem=$(ps --no-heading -o rss -p $pid)
+		[ -z "$rssmem" ] && return $OCF_ERR_GENERIC
+		[ $rssmem -le $maxmem  ] || return $OCF_ERR_GENERIC
+	fi
+
+	return $OCF_SUCCESS
+}

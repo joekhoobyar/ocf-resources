@@ -3,7 +3,7 @@ jk_check_executable() {
 
 	while [ $# -gt 0 ]; do
 		command="${1%% *}"
-		if [ ! -x $command ] && ! which $command >/dev/null 2>&1; then
+		if [ ! -x "$command" ] && ! which "$command" >/dev/null 2>&1; then
 			ocf_log err "$command is either missing or not executable"
 			return $OCF_ERR_INSTALLED
 		fi
@@ -18,7 +18,7 @@ jk_assert_executable() {
 
 jk_check_readable() {
 	while [ $# -gt 0 ]; do
-		if [ ! -r $1 ]; then
+		if [ ! -r "$1" ]; then
 			ocf_log err "$1 is either missing or unreadable"
 			return $OCF_ERR_CONFIGURED
 		fi
@@ -33,7 +33,7 @@ jk_assert_readable() {
 
 jk_check_writable() {
 	while [ $# -gt 0 ]; do
-		if [ ! -w $1 -a ! -w $(dirname $1) ]; then
+		if [ ! -w "$1" -a ! -w $(dirname "$1") ]; then
 			ocf_log err "$1 or it's parent directory is unwritable, or the latter is missing"
 			return $OCF_ERR_CONFIGURED
 		fi
@@ -48,7 +48,7 @@ jk_assert_writable() {
 
 jk_check_directory() {
 	while [ $# -gt 0 ]; do
-		if [ ! -r $1 -o ! -d $1 -o ! -x $1 ]; then
+		if [ ! -r "$1" -o ! -d "$1" -o ! -x "$1" ]; then
 			ocf_log err "$1 is either missing or unreadable"
 			return $OCF_ERR_CONFIGURED
 		fi
@@ -84,16 +84,16 @@ jk_check_ip() {
 }
 
 jk_pidfile_prepare() {
-	local ownership=$1
-	[ -z "$ownership" ] && ownership=$OCF_RESKEY_pid_owner
+	local ownership="$1"
+	[ -z "$ownership" ] && ownership="$OCF_RESKEY_pid_owner"
 	[ -z "$ownership" ] || ownership="$ownership:$OCF_RESKEY_pid_group"
 	[ -z "$ownership" ] && return 0
-	local pidfile=$2
-	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	local pidfile="$2"
+	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 
-	if [ -z "$pidfile" ] || ! touch $pidfile; then return 1; fi
-	chown $ownership $pidfile || return 2
-	chmod 640 $pidfile || return 3
+	if [ -z "$pidfile" ] || ! touch "$pidfile"; then return 1; fi
+	chown "$ownership" "$pidfile" || return 2
+	chmod 640 "$pidfile" || return 3
 	return 0
 }
 
@@ -116,10 +116,10 @@ jk_pidfile_status() {
 }
 
 jk_resource_monitor_by_pid() {
-	local retval pidfile=$2
-	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	local retval pidfile="$2"
+	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 
-	jk_pidfile_status $pidfile; retval=$?
+	jk_pidfile_status "$pidfile"; retval=$?
 
 	if [ $retval -eq 0 ]; then
 		ocf_log debug "$1 is running"
@@ -154,8 +154,8 @@ jk_resource_exit_if_stopped_by_pid() {
 }
 
 jk_resource_start_by_command() {
-	local retval message name=$1 command=$2 pidfile=$3
-	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	local retval message name="$1" command="$2" pidfile="$3"
+	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 	
 	message=`$command 2>&1`; retval=$?
 
@@ -164,17 +164,17 @@ jk_resource_start_by_command() {
 		ocf_log err "$name failed to start: $message"
 		return $OCF_ERR_GENERIC
 	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $pidfile || true
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice "$pidfile" || true
 	fi
 }
 
 jk_verify_start_by_pid() {
-	local pidfile=$2
+	local pidfile="$2"
 	local waiting=$OCF_RESKEY_verify_start
-	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 
 	while [ "$waiting" = 1 ]; do
-		jk_pidfile_status $pidfile && return $OCF_SUCCESS
+		jk_pidfile_status "$pidfile" && return $OCF_SUCCESS
 		if [ $? -gt 2 ]; then
 			ocf_log err "$1 failed to start"
 			return $OCF_ERR_GENERIC
@@ -186,12 +186,12 @@ jk_verify_start_by_pid() {
 }
 
 jk_verify_stop_by_pid() {
-	local pidfile=$2
+	local pidfile="$2"
 	local waiting=$OCF_RESKEY_verify_stop
-	[ -z "$pidfile" ] && pidfile=$OCF_RESKEY_pid
+	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 
 	while [ $waiting = 1 ]; do
-		jk_pidfile_status $pidfile || return $OCF_SUCCESS
+		jk_pidfile_status "$pidfile" || return $OCF_SUCCESS
 		sleep 2
 	done
 	return $OCF_NOT_RUNNING

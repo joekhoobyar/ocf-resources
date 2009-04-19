@@ -67,7 +67,7 @@ cat <<END
 					<shortdesc>svnserve executable</shortdesc>
 					<content type="string" default="$SVNSERVE_which"/>
 				</parameter>
-				<parameter name="svnroot" required="0" unique="0">
+				<parameter name="svnroot" required="1">
 					<longdesc lang="en">
 						Full path to the root svn directory for this instance.
 					</longdesc>

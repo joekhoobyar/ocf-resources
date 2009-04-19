@@ -195,7 +195,7 @@ haproxy_start() {
 		ocf_log err "HAProxy failed to start: error code $retval"
 		return $OCF_ERR_GENERIC
 	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $OCF_RESKEY_pid) || true
 	fi
 
 	jk_verify_start_by_pid 'HAProxy'

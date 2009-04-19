@@ -169,7 +169,7 @@ svnserve_start() {
 		ocf_log err "svnserve failed to start: $ERRORS"
 		return $OCF_ERR_GENERIC
 	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $OCF_RESKEY_pid) || true
 	fi
 
 	return $OCF_SUCCESS

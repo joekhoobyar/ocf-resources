@@ -164,7 +164,7 @@ jk_resource_start_by_command() {
 		ocf_log err "$name failed to start: $message"
 		return $OCF_ERR_GENERIC
 	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice "$pidfile" || true
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $pidfile) || true
 	fi
 }
 

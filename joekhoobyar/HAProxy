@@ -180,10 +180,7 @@ haproxy_monitor() {
 haproxy_start() {
 	local retval
 
-	if jk_resource_monitor_by_pid 'HAProxy'; then
-		ocf_log debug "HAProxy is already running"
-		return $OCF_SUCCESS
-	fi
+	jk_resource_exit_if_started_by_pid 'HAProxy'
 
 	if ! jk_pidfile_prepare; then
 		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"

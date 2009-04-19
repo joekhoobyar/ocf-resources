@@ -157,10 +157,7 @@ tracd_monitor() {
 }
 
 tracd_start() {
-	if jk_resource_monitor_by_pid 'tracd'; then
-		ocf_log debug "tracd is already running"
-		return $OCF_SUCCESS
-	fi
+	jk_resource_exit_if_started_by_pid 'tracd'
 
 	jk_pidfile_prepare && ERRORS=`$TRACD 2>&1`
 	RETVAL=$?

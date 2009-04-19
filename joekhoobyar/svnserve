@@ -156,10 +156,7 @@ svnserve_monitor() {
 }
 
 svnserve_start() {
-	if jk_resource_monitor_by_pid 'svnserve'; then
-		ocf_log debug "svnserve is already running"
-		return $OCF_SUCCESS
-	fi
+	jk_resource_exit_if_started_by_pid 'svnserve'
 
 	jk_pidfile_prepare && ERRORS=`$SVNSERVE 2>&1`
 	RETVAL=$?

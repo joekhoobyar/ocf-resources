@@ -158,10 +158,7 @@ nginx_monitor() {
 nginx_start() {
 	local retval
 
-	if jk_resource_monitor_by_pid 'NGINX'; then
-		ocf_log debug "NGINX is already running"
-		return $OCF_SUCCESS
-	fi
+	jk_resource_exit_if_started_by_pid 'NGINX'
 
 	if ! jk_pidfile_prepare; then
 		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"

@@ -168,10 +168,7 @@ monit_monitor() {
 }
 
 monit_start() {
-	if jk_resource_monitor_by_pid 'Monit'; then
-		ocf_log debug "Monit is already running"
-		return $OCF_SUCCESS
-	fi
+	jk_resource_exit_if_started_by_pid 'Monit'
 
 	jk_pidfile_prepare && ERRORS=`$MONIT 2>&1`
 	RETVAL=$?

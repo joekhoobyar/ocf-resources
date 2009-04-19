@@ -1,0 +1,193 @@
+#!/bin/sh
+#
+# Description:	Directly manages a tracd instance as a High-Availability OCF resource
+#								agent running on a Heartbeat/LinuxHA cluster.
+#
+# Author:		Joe Khoobyar <joe@ankhcraft.com>
+# License:	GNU General Public License (GPL) version 2
+# Copyright (c) 2009 All Rights Reserved
+#
+#
+# See usage() function below for more details...
+#
+# OCF instance parameters:
+#   OCF_RESKEY_tracd
+#   OCF_RESKEY_projectroot
+#		OCF_RESKEY_pid
+#   OCF_RESKEY_pid_owner
+#   OCF_RESKEY_pid_group
+#   OCF_RESKEY_address
+#   OCF_RESKEY_port
+#		OCF_RESKEY_options
+#   OCF_RESKEY_renice
+
+#######################################################################
+# Initialization:
+
+. ${OCF_ROOT:-/usr/lib/ocf}/resource.d/heartbeat/.ocf-shellfuncs
+. $(dirname $0)/jk-shellfuncs
+
+#######################################################################
+
+TRACD_which=$(which tracd 2>/dev/null)
+: ${TRACD_which=/usr/bin/tracd}
+: ${OCF_RESKEY_tracd=$TRACD_which}
+: ${OCF_RESKEY_pid="/var/run/tracd.pid"}
+
+usage() {
+cat <<END
+
+usage: $0 (start|stop|status|monitor|meta-data|validate-all)
+
+$0 manages tracd as an OCF resource.
+
+The 'start' operation starts tracd.
+The 'stop' operation stops tracd.
+The 'status' operation reports whether tracd is running.
+The 'monitor' operation reports whether tracd seems to be working.
+The 'meta-data' operation reports the configuration options.
+The 'validate-all' operation reports whether the parameters are valid.
+
+END
+}
+
+meta_data() {
+cat <<END
+<?xml version="1.0" ?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="tracd">
+    <version>1.0</version>
+      <longdesc lang="en">This is an OCF resource agent for the tracd daemon</longdesc>
+      <shortdesc lang="en">OCF resource agent for tracd</shortdesc>
+      <parameters>
+				<parameter name="tracd" required="1">
+					<longdesc lang="en">
+						Full path to the tracd executable.
+					</longdesc>
+					<shortdesc>tracd executable</shortdesc>
+					<content type="string" default="$TRACD_which"/>
+				</parameter>
+				<parameter name="projectroot" required="1" unique="0">
+					<longdesc lang="en">
+						Full path to the project directory for this instance.
+					</longdesc>
+					<shortdesc>project root</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="pid" required="1">
+					<longdesc lang="en">
+						Full path to the PID file that this instance should use.
+					</longdesc>
+					<shortdesc>PID file</shortdesc>
+					<content type="string" default="/var/run/tracd.pid"/>
+				</parameter>
+				<parameter name="pid_owner" required="0">
+					<longdesc lang="en">
+						User who should own the PID file.
+					</longdesc>
+					<shortdesc>PID file owner</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="pid_group" required="0">
+					<longdesc lang="en">
+						Group which should own the PID file.
+					</longdesc>
+					<shortdesc>PID file group</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="address" required="0">
+					<longdesc lang="en">
+						IP address or hostname that tracd should bind it's listening socket to.
+					</longdesc>
+					<shortdesc>Bind address</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="port" required="0">
+					<longdesc lang="en">
+						Port number that tracd should bind it's listening socket to.
+					</longdesc>
+					<shortdesc>Bind port</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="options" required="0">
+					<longdesc lang="en">
+						Any additional options to pass to the tracd command.
+					</longdesc>
+					<shortdesc>Extra options</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+				<parameter name="renice" required="0">
+					<longdesc lang="en">
+						Optional value to pass to renice tracd with after starting it.
+					</longdesc>
+					<shortdesc>renice value</shortdesc>
+					<content type="string" default=""/>
+				</parameter>
+		</parameters>
+    <actions>
+      <action name="start" timeout="30" />
+      <action name="stop" timeout="30" />
+      <action name="status" timeout="20" />
+      <action name="monitor" depth="0" start-delay="10" interval="10" timeout="30" />
+      <action name="meta-data" timeout="5" />
+      <action name="validate-all" timeout="5" />
+   </actions>
+</resource-agent>
+
+END
+}
+
+TRACD="$OCF_RESKEY_tracd -d --root $OCF_RESKEY_projectroot --pidfile $OCF_RESKEY_pid"
+[ -z "$OCF_RESKEY_address" ] || TRACD="$TRACD -b $OCF_RESKEY_address"
+[ -z "$OCF_RESKEY_port" ] || TRACD="$TRACD -p $OCF_RESKEY_port"
+[ -z "$OCF_RESKEY_options" ] || TRACD="$TRACD $OCF_RESKEY_options"
+TRACD="$TRACD $OCF_RESKEY_projectroot"
+
+tracd_validate() {
+	jk_assert_executable "$OCF_RESKEY_tracd"
+	jk_assert_directory "$OCF_RESKEY_projectroot"
+}
+
+tracd_status() {
+	jk_resource_status_by_pid 'tracd'
+}
+
+tracd_monitor() {
+	jk_resource_monitor_by_pid 'tracd'
+}
+
+tracd_start() {
+	if jk_resource_monitor_by_pid 'tracd'; then
+		ocf_log debug "tracd is already running"
+		return $OCF_SUCCESS
+	fi
+
+	jk_pidfile_prepare && ERRORS=`$TRACD 2>&1`
+	RETVAL=$?
+	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
+
+	if [ $RETVAL -ne $OCF_SUCCESS ]; then
+		ocf_log err "tracd failed to start: $ERRORS"
+		return $OCF_ERR_GENERIC
+	else
+		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $OCF_RESKEY_pid || true
+	fi
+
+	return $OCF_SUCCESS
+}
+
+tracd_stop() {
+	jk_resource_stop_by_pid 'tracd'
+}
+
+# What kind of method was invoked?
+case "$1" in
+  start)	tracd_validate; tracd_start;;
+  stop)		tracd_stop;;
+  status)	tracd_status;;
+  monitor)	tracd_monitor;;
+  meta-data)	meta_data; exit $OCF_SUCCESS;;
+  validate-all)	tracd_validate; exit $OCF_SUCCESS;;
+  *)		usage; exit $OCF_ERR_UNIMPLEMENTED;;
+esac
+exit $?

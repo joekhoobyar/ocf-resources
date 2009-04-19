@@ -176,18 +176,7 @@ svnserve_start() {
 }
 
 svnserve_stop() {
-	jk_resource_monitor_by_pid 'svnserve'|| return $OCF_SUCCESS
-
-	ERRORS=`$SVNSERVE quit 2>&1`
-	RETVAL=$?
-	[ -z "$ERRORS" -a "$RETVAL" -ne 0 ] && ERRORS="error code $RETVAL"
-
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "svnserve failed to stop: $ERRORS"
-		return $OCF_ERR_GENERIC
-	fi
-
-	return $OCF_SUCCESS
+	jk_resource_stop_by_pid 'svnserve'
 }
 
 # What kind of method was invoked?

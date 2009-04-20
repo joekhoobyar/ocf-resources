@@ -156,25 +156,10 @@ nginx_monitor() {
 }
 
 nginx_start() {
-	local retval
-
 	jk_resource_exit_if_started_by_pid 'NGINX'
 
-	if ! jk_pidfile_prepare; then
-		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"
-		return $OCF_ERR_GENERIC
-	fi
-
-	ERRORS=`$NGINX 2>&1`; retval=$?
-	if [ $retval -ne $OCF_SUCCESS ]; then
-		[ -z "$ERRORS" ] && ERRORS="error code $retval"
-		ocf_log err "NGINX failed to start: $ERRORS"
-		return $OCF_ERR_GENERIC
-	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $OCF_RESKEY_pid) || true
-	fi
-
-	return $OCF_SUCCESS
+	jk_pidfile_prepare &&
+		jk_resource_start_by_command 'NGINX' "$NGINX"
 }
 
 nginx_reload() {

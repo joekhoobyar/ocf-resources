@@ -159,18 +159,8 @@ tracd_monitor() {
 tracd_start() {
 	jk_resource_exit_if_started_by_pid 'tracd'
 
-	jk_pidfile_prepare && ERRORS=`$TRACD 2>&1`
-	RETVAL=$?
-	[ -z "$ERRORS" ] && ERRORS="error code $RETVAL"
-
-	if [ $RETVAL -ne $OCF_SUCCESS ]; then
-		ocf_log err "tracd failed to start: $ERRORS"
-		return $OCF_ERR_GENERIC
-	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $OCF_RESKEY_pid) || true
-	fi
-
-	return $OCF_SUCCESS
+	jk_pidfile_prepare &&
+		jk_resource_start_by_command 'tracd' "$TRACD"
 }
 
 tracd_stop() {

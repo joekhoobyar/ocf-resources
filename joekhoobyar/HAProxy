@@ -182,20 +182,9 @@ haproxy_start() {
 
 	jk_resource_exit_if_started_by_pid 'HAProxy'
 
-	if ! jk_pidfile_prepare; then
-		ocf_log err "Unable to prepare the PID file $OCF_RESKEY_pid"
-		return $OCF_ERR_GENERIC
-	fi
-
-	$HAPROXY -p $OCF_RESKEY_pid -D >/dev/null 2>&1; retval=$?
-	if [ $retval -ne $OCF_SUCCESS ]; then
-		ocf_log err "HAProxy failed to start: error code $retval"
-		return $OCF_ERR_GENERIC
-	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $OCF_RESKEY_pid) || true
-	fi
-
-	jk_verify_start_by_pid 'HAProxy'
+	jk_pidfile_prepare &&
+		jk_resource_start_by_command 'HAProxy' "$HAPROXY -p $OCF_RESKEY_pid -D >/dev/null" &&
+		jk_verify_start_by_pid 'HAProxy'
 }
 
 haproxy_reload() {

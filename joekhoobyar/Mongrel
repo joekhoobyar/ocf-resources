@@ -249,8 +249,9 @@ mongrel_monitor() {
 
 mongrel_start() {
 	jk_resource_exit_if_started_by_pid 'Mongrel' $MONGREL_pid_file
-	jk_resource_start_by_command 'Mongrel' "$MONGREL_start" "$MONGREL_pid_file"
-	jk_verify_start_by_pid 'Mongrel' $MONGREL_pid_file
+
+	jk_resource_start_by_command 'Mongrel' "$MONGREL_start" "$MONGREL_pid_file" &&
+		jk_verify_start_by_pid 'Mongrel' $MONGREL_pid_file
 }
 
 mongrel_stop() {

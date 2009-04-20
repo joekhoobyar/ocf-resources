@@ -95,9 +95,9 @@ jk_pidfile_prepare() {
 		ocf_log err "PID file name is missing!"
 	elif ! touch "$pidfile"; then
 		ocf_log err "Unable to write PID file: $OCF_RESKEY_pid"
-	elif ! chown "$ownership" "$pidfile"
+	elif ! chown "$ownership" "$pidfile"; then
 		ocf_log err "Unable to change PID file ownership to \`$ownership\' - $OCF_RESKEY_pid"
-	elif ! chmod 640 "$pidfile"
+	elif ! chmod 640 "$pidfile"; then
 		ocf_log err "Unable to change PID file perms to \`640\' - $OCF_RESKEY_pid"
 	else
 		return $OCF_SUCCESS

@@ -87,14 +87,23 @@ jk_pidfile_prepare() {
 	local ownership="$1"
 	[ -z "$ownership" ] && ownership="$OCF_RESKEY_pid_owner"
 	[ -z "$ownership" ] || ownership="$ownership:$OCF_RESKEY_pid_group"
-	[ -z "$ownership" ] && return 0
+	[ -z "$ownership" ] && return $OCF_SUCCESS
 	local pidfile="$2"
 	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 
-	if [ -z "$pidfile" ] || ! touch "$pidfile"; then return 1; fi
-	chown "$ownership" "$pidfile" || return 2
-	chmod 640 "$pidfile" || return 3
-	return 0
+	if [ -z "$pidfile" ]; then
+		ocf_log err "PID file name is missing!"
+	elif ! touch "$pidfile"; then
+		ocf_log err "Unable to write PID file: $OCF_RESKEY_pid"
+	elif ! chown "$ownership" "$pidfile"
+		ocf_log err "Unable to change PID file ownership to \`$ownership\' - $OCF_RESKEY_pid"
+	elif ! chmod 640 "$pidfile"
+		ocf_log err "Unable to change PID file perms to \`640\' - $OCF_RESKEY_pid"
+	else
+		return $OCF_SUCCESS
+	fi
+
+	return $OCF_ERR_GENERIC
 }
 
 jk_pidfile_status() {
@@ -157,15 +166,17 @@ jk_resource_start_by_command() {
 	local retval message name="$1" command="$2" pidfile="$3"
 	[ -z "$pidfile" ] && pidfile="$OCF_RESKEY_pid"
 	
-	message=$($command 2>&1); retval=$?
+	message="$($command 2>&1)"; retval=$?
 
-	if [ $retval -ne $OCF_SUCCESS ]; then
+	if [ $retval -ne 0 ]; then
 		[ -z "$message" ] && mesage="error code $retval"
 		ocf_log err "$name failed to start: $message"
 		return $OCF_ERR_GENERIC
-	else
-		[ -z $OCF_RESKEY_renice ] || renice $OCF_RESKEY_renice $(cat $pidfile) || true
+	elif [ -n "$OCF_RESKEY_renice" ] && [ -r $pidfile ]; then
+		renice $OCF_RESKEY_renice $(cat $pidfile)
 	fi
+
+	return $OCF_SUCCESS
 }
 
 jk_verify_start_by_pid() {

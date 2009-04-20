@@ -183,7 +183,7 @@ haproxy_start() {
 	jk_resource_exit_if_started_by_pid 'HAProxy'
 
 	jk_pidfile_prepare &&
-		jk_resource_start_by_command 'HAProxy' "$HAPROXY -p $OCF_RESKEY_pid -D >/dev/null" &&
+		jk_resource_start_by_command 'HAProxy' "$HAPROXY -p $OCF_RESKEY_pid -D" &&
 		jk_verify_start_by_pid 'HAProxy'
 }
 

@@ -33,6 +33,7 @@ TRACD_which=$(which tracd 2>/dev/null)
 : ${TRACD_which=/usr/bin/tracd}
 : ${OCF_RESKEY_tracd=$TRACD_which}
 : ${OCF_RESKEY_pid="/var/run/tracd.pid"}
+: ${OCF_RESKEY_port=3050}
 
 usage() {
 cat <<END
@@ -107,7 +108,7 @@ cat <<END
 						Port number that tracd should bind it's listening socket to.
 					</longdesc>
 					<shortdesc>Bind port</shortdesc>
-					<content type="string" default=""/>
+					<content type="string" default="3050"/>
 				</parameter>
 				<parameter name="options" required="0">
 					<longdesc lang="en">
@@ -137,11 +138,10 @@ cat <<END
 END
 }
 
-TRACD="$OCF_RESKEY_tracd -d --root $OCF_RESKEY_projectroot --pidfile $OCF_RESKEY_pid"
+TRACD="$OCF_RESKEY_tracd -d -p $OCF_RESKEY_port"
 [ -z "$OCF_RESKEY_address" ] || TRACD="$TRACD -b $OCF_RESKEY_address"
-[ -z "$OCF_RESKEY_port" ] || TRACD="$TRACD -p $OCF_RESKEY_port"
 [ -z "$OCF_RESKEY_options" ] || TRACD="$TRACD $OCF_RESKEY_options"
-TRACD="$TRACD $OCF_RESKEY_projectroot"
+TRACD="$TRACD $OCF_RESKEY_projectroot --pidfile $OCF_RESKEY_pid"
 
 tracd_validate() {
 	jk_assert_executable "$OCF_RESKEY_tracd"

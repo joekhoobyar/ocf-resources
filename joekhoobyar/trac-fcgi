@@ -27,7 +27,7 @@
 TRACFCGI_which=$(which trac.fcgi 2>/dev/null)
 : ${TRACFCGI_which=/usr/share/trac/cgi-bin/trac.fcgi}
 : ${OCF_RESKEY_tracfcgi=$TRACFCGI_which}
-: ${OCF_RESKEY_pid="/var/run/trac/trac-fcgi.pid"}
+: ${OCF_RESKEY_pid="/var/run/trac-fcgi.pid"}
 
 usage() {
 cat <<END

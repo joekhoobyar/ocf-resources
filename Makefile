@@ -7,7 +7,7 @@
 #
 RESOURCE_DIR = /usr/lib/ocf/resource.d
 JOEK_DIR = $(RESOURCE_DIR)/joekhoobyar
-JOEK_SCRIPTS = NGINX HAProxy Monit Mongrel svnserve tracd
+JOEK_SCRIPTS = NGINX HAProxy Monit Mongrel svnserve tracd trac-fcgi
 JOEK_FUNCS = jk-shellfuncs
 JOEK_RESOURCES = $(JOEK_SCRIPTS) $(JOEK_FUNCS)
 
